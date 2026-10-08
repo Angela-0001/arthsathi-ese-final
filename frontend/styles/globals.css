@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   ArthSathi Global Styles
+   Designed for: low-literacy users, small Android screens,
+   poor network conditions, multilingual text
+   ============================================================ */
+
+@layer base {
+  html {
+    font-size: 18px;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-surface text-gray-900 font-sans;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none; /* Prevents pull-to-refresh on mobile PWA */
+  }
+
+  /* Minimum 48px touch targets everywhere (WCAG 2.5.5) */
+  button, a, [role="button"], input, select, textarea {
+    @apply min-h-[48px];
+  }
+
+  /* Focus ring for keyboard/switch access users */
+  *:focus-visible {
+    @apply outline-none ring-4 ring-accent ring-offset-2;
+  }
+}
+
+@layer components {
+  /* Large tap-friendly primary button */
+  .btn-primary {
+    @apply w-full py-4 px-6 bg-primary text-white text-xl font-semibold
+           rounded-2xl min-h-[56px] flex items-center justify-center gap-3
+           active:bg-primary-dark transition-colors duration-150
+           focus-visible:ring-4 focus-visible:ring-accent;
+  }
+
+  .btn-secondary {
+    @apply w-full py-4 px-6 bg-white text-primary text-xl font-semibold
+           rounded-2xl min-h-[56px] border-2 border-primary
+           flex items-center justify-center gap-3
+           active:bg-surface-alt transition-colors duration-150;
+  }
+
+  /* Card used for scheme/insurance results */
+  .result-card {
+    @apply bg-white rounded-3xl shadow-md p-5 mb-4
+           border border-gray-100 active:border-primary transition-all;
+  }
+
+  /* Large icon button (used for voice mode) */
+  .icon-btn {
+    @apply w-24 h-24 rounded-full flex items-center justify-center
+           text-4xl cursor-pointer select-none
+           active:scale-95 transition-transform;
+  }
+
+  /* Form input — large and accessible */
+  .form-input {
+    @apply w-full text-xl p-4 rounded-2xl border-2 border-gray-300
+           focus:border-primary focus:outline-none min-h-[56px]
+           bg-white placeholder-gray-400;
+  }
+
+  /* Choice option (language, gender, etc.) */
+  .choice-option {
+    @apply flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-200
+           bg-white cursor-pointer min-h-[64px]
+           data-[selected=true]:border-primary data-[selected=true]:bg-primary/5
+           active:bg-gray-50 transition-colors;
+  }
+
+  /* Score badge */
+  .score-badge {
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold;
+  }
+
+  /* Risk level indicator */
+  .risk-low    { @apply bg-green-100  text-green-800;  }
+  .risk-medium { @apply bg-yellow-100 text-yellow-800; }
+  .risk-high   { @apply bg-red-100    text-red-800;    }
+}
+
+/* Voice pulse animation for recording indicator */
+@keyframes voice-pulse {
+  0%   { transform: scale(1);   opacity: 1;   }
+  50%  { transform: scale(1.15); opacity: 0.7; }
+  100% { transform: scale(1);   opacity: 1;   }
+}
+
+.voice-recording {
+  animation: voice-pulse 1.2s ease-in-out infinite;
+}
+
+/* Skeleton loading animation for low-latency feedback */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0;  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.5s infinite linear;
+  @apply rounded-xl;
+}
+
+/* Safe area insets for notched phones */
+.safe-padding {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-top: env(safe-area-inset-top, 0px);
+}

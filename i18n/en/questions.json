@@ -1,0 +1,134 @@
+{
+  "preferred_language": {
+    "question": "Choose your language",
+    "hint": "Select the language you are most comfortable with"
+  },
+  "interaction_mode": {
+    "question": "How would you like to use ArthSathi?",
+    "options": {
+      "text": { "label": "Type & Read", "desc": "Read questions, type answers" },
+      "voice": { "label": "Speak & Listen", "desc": "Listen to questions, answer by voice" }
+    }
+  },
+  "state": { "question": "Which state do you live in?", "hint": "Select your state" },
+  "district": { "question": "Which district?", "hint": "Type district name", "placeholder": "e.g. Pune, Varanasi" },
+  "age": { "question": "How old are you?", "hint": "Enter your age in years", "placeholder": "e.g. 35" },
+  "gender": {
+    "question": "What is your gender?",
+    "options": {
+      "male": "Male", "female": "Female",
+      "transgender": "Transgender", "prefer_not_to_say": "Prefer not to say"
+    }
+  },
+  "caste_category": {
+    "question": "What is your caste category?",
+    "options": {
+      "general": "General / Open",
+      "obc": "OBC (Other Backward Class)",
+      "sc": "SC (Scheduled Caste)",
+      "st": "ST (Scheduled Tribe)",
+      "ews": "EWS (Economically Weaker Section)",
+      "nt": "NT (Nomadic Tribe)",
+      "other": "Other"
+    }
+  },
+  "occupation": {
+    "question": "What is your main work?",
+    "hint": "Choose the option closest to your work",
+    "options": {
+      "farmer": "Farmer (own land)", "marginal_farmer": "Small Farmer (< 2 acres)",
+      "farm_laborer": "Farm Labourer", "fisherman": "Fisherman",
+      "weaver": "Weaver", "artisan": "Artisan / Craftsperson",
+      "self_employed": "Self-Employed", "street_vendor": "Street Vendor",
+      "daily_wage": "Daily Wage Worker", "construction_worker": "Construction Worker",
+      "domestic_worker": "Domestic Worker", "small_trader": "Small Trader / Shopkeeper",
+      "student": "Student", "homemaker": "Homemaker",
+      "unemployed": "Unemployed / Looking for work", "other": "Other"
+    }
+  },
+  "monthly_income": {
+    "question": "How much do you earn per month?",
+    "hint": "Select the range closest to your income",
+    "options": {
+      "0": "No income",
+      "2000": "Under ₹2,000",
+      "5000": "₹2,000 – ₹5,000",
+      "8000": "₹5,000 – ₹8,000",
+      "12000": "₹8,000 – ₹12,000",
+      "20000": "₹12,000 – ₹20,000",
+      "30000": "Above ₹20,000"
+    }
+  },
+  "ration_card_type": {
+    "question": "What type of ration card do you have?",
+    "hint": "Choose the colour/type of your ration card",
+    "options": {
+      "aay": "AAY – Antyodaya (Yellow / Poorest of poor)",
+      "phh": "PHH – Priority Household (BPL / Below Poverty Line)",
+      "nphh": "NPHH – Non-Priority (APL / Above Poverty Line)",
+      "annapurna": "Annapurna (Senior destitute)",
+      "state_other": "Other state card",
+      "none": "I don't have a ration card",
+      "applied": "Applied but not received yet"
+    }
+  },
+  "has_bank_account": { "question": "Do you have a bank account?" },
+  "has_jan_dhan_account": { "question": "Is it a Jan Dhan (PMJDY) account?" },
+  "has_aadhaar": { "question": "Do you have an Aadhaar card?" },
+  "land_holding_acres": { "question": "How much land do you own?", "hint": "Enter in acres. Enter 0 if none.", "placeholder": "e.g. 2" },
+  "has_disability": { "question": "Do you have a disability?" },
+  "disability_type": {
+    "question": "What type of disability?",
+    "options": {
+      "visual": "Visual", "hearing": "Hearing", "locomotor": "Locomotor",
+      "mental_illness": "Mental illness", "intellectual": "Intellectual",
+      "multiple": "Multiple", "other": "Other"
+    }
+  },
+  "is_widow": { "question": "Are you a widow?" },
+  "has_girl_child": { "question": "Do you have a daughter?" },
+  "is_student": { "question": "Are you currently studying?" },
+  "education_level": {
+    "question": "What is your highest education level?",
+    "options": {
+      "primary": "Primary (1-5)", "middle": "Middle (6-8)",
+      "matriculation": "Matric / 10th", "higher_secondary": "12th / Intermediate",
+      "graduate": "Graduate", "postgraduate": "Post-Graduate"
+    }
+  },
+  "num_dependents": { "question": "How many family members depend on you?", "hint": "Include children, elderly parents", "placeholder": "e.g. 3" },
+  "financial_goal": {
+    "question": "What is your main financial need right now?",
+    "hint": "Choose the one that matters most",
+    "options": {
+      "farming": "Farming (seeds, fertilizer, equipment)",
+      "housing": "Build or repair my house",
+      "health": "Medical treatment or health care",
+      "education": "Education or scholarship",
+      "employment": "Job or employment",
+      "insurance": "Life or accident insurance",
+      "pension": "Pension for old age",
+      "business": "Start or grow a business",
+      "daughter": "Daughter's marriage or welfare",
+      "loan": "Repay a loan",
+      "savings": "Save money for the future",
+      "other": "Something else"
+    }
+  },
+  "goal_amount": { "question": "How much money do you need for this?", "hint": "Approximate amount in Rupees", "placeholder": "e.g. 50000" },
+  "urgency_level": {
+    "question": "How urgent is this need?",
+    "options": {
+      "1": "Not urgent — can wait", "2": "Somewhat urgent",
+      "3": "Moderately urgent", "4": "Very urgent",
+      "5": "Emergency — need help now"
+    }
+  },
+  "common": {
+    "yes": "Yes", "no": "No", "skip": "Skip",
+    "back": "Back", "next": "Next", "finish": "See My Results",
+    "step": "Step {{current}} of {{total}}",
+    "tap_to_speak": "Tap to speak", "listening": "Listening...",
+    "loading": "Loading...", "retry": "Try Again"
+  }
+}
