@@ -251,80 +251,109 @@ router.post('/bank', async (req, res) => {
   const { lang, caller, age, gender, caste, occ, income } = req.query;
   const hasBank = req.body.Digits === '1';
 
+  // Map IVR values to DB enum values
+  const genderMap = { male: 'male', female: 'female', other: 'prefer_not_to_say' };
+  const casteMap  = { general: 'general', obc: 'obc', sc: 'sc', st: 'st', other: 'other' };
+  const occMap    = { farmer: 'farmer', farm_laborer: 'farm_laborer', daily_wage: 'daily_wage',
+                      self_employed: 'self_employed', construction_worker: 'construction_worker', other: 'other' };
+
+  const safeGender = genderMap[gender] || 'prefer_not_to_say';
+  const safeCaste  = casteMap[caste]   || 'general';
+  const safeOcc    = occMap[occ]       || 'other';
+
   try {
-    // Build profile object
     const monthlyIncome = parseInt(income, 10) || 0;
     const annualIncome  = monthlyIncome * 12;
 
     const profile = {
-      age:              parseInt(age, 10) || 25,
-      gender:           gender || 'other',
-      caste_category:   caste  || 'general',
-      occupation:       occ    || 'other',
-      annual_income:    annualIncome,
-      monthly_income:   monthlyIncome,
-      has_bank_account: hasBank,
-      has_jan_dhan_account: hasBank,
-      state:            null,
-      financial_goal:   null,
-      urgency_level:    3,
-      goal_amount:      null,
+      age: parseInt(age, 10) || 25,
+      gender: safeGender, caste_category: safeCaste, occupation: safeOcc,
+      annual_income: annualIncome, monthly_income: monthlyIncome,
+      has_bank_account: hasBank, has_jan_dhan_account: hasBank,
+      state: null, financial_goal: null, urgency_level: 3, goal_amount: null,
     };
 
-    // Save to database
-    const phone = caller !== 'unknown' ? caller : null;
+    // Save user + profile to DB
+    const phone = (caller && caller !== 'unknown') ? caller : null;
     let userId = null;
     try {
       let userResult;
       if (phone) {
-        userResult = await query(
-          `INSERT INTO users (phone_number, preferred_language, interaction_mode, created_via)
-           VALUES ($1, $2, 'voice', 'ivr')
-           ON CONFLICT (phone_number) DO UPDATE SET
-             preferred_language = EXCLUDED.preferred_language,
-             updated_at = NOW()
-           WHERE users.phone_number IS NOT NULL
-           RETURNING id`,
-          [phone, lang]
-        );
+        const existing = await query('SELECT id FROM users WHERE phone_number = $1', [phone]);
+        if (existing.rows.length > 0) {
+          userResult = existing;
+        } else {
+          userResult = await query(
+            `INSERT INTO users (phone_number, preferred_language, interaction_mode, created_via)
+             VALUES ($1, $2, 'voice', 'ivr') RETURNING id`,
+            [phone, lang || 'hi']
+          );
+        }
       } else {
         userResult = await query(
           `INSERT INTO users (phone_number, preferred_language, interaction_mode, created_via)
            VALUES (NULL, $1, 'voice', 'ivr') RETURNING id`,
-          [lang]
+          [lang || 'hi']
         );
       }
       userId = userResult.rows[0].id;
 
       await query(
-        `INSERT INTO financial_profiles (
-           user_id, age, gender, caste_category, occupation,
-           monthly_income, annual_income, has_bank_account, has_jan_dhan_account, completed_at
-         ) VALUES ($1,$2,$3::gender_t,$4::caste_t,$5::occupation_t,$6,$7,$8,$8,NOW())
+        `INSERT INTO financial_profiles
+           (user_id, age, gender, caste_category, occupation,
+            monthly_income, annual_income, has_bank_account, has_jan_dhan_account, completed_at)
+         VALUES ($1,$2,$3::gender_t,$4::caste_t,$5::occupation_t,$6,$7,$8,$8,NOW())
          ON CONFLICT (user_id) DO UPDATE SET
-           age = EXCLUDED.age,
-           monthly_income = EXCLUDED.monthly_income,
-           annual_income  = EXCLUDED.annual_income,
-           updated_at     = NOW()`,
-        [userId, profile.age, profile.gender, profile.caste_category,
-         profile.occupation, monthlyIncome, annualIncome, hasBank, hasBank]
+           age=EXCLUDED.age, monthly_income=EXCLUDED.monthly_income,
+           annual_income=EXCLUDED.annual_income, updated_at=NOW()`,
+        [userId, profile.age, safeGender, safeCaste, safeOcc,
+         monthlyIncome, annualIncome, hasBank]
       );
     } catch (dbErr) {
-      console.error('[IVR] DB save error:', dbErr.message);
+      console.error('[IVR] DB error:', dbErr.message);
     }
 
-    // Get recommendations via the Python engine
+    // Get recommendations - use DB directly, no engine dependency for IVR
     let schemes = [], insurance = [];
     try {
-      const { getRecommendations } = require('../services/engineService');
-      const result = await getRecommendations(userId || 'anonymous', { limit: 5, itemType: 'both' });
-      schemes   = result.schemes   || [];
-      insurance = result.insurance || [];
-    } catch (engErr) {
-      console.error('[IVR] Engine error:', engErr.message);
-      // Fall back to simple DB query for top schemes
-      const fallback = await query('SELECT name FROM schemes WHERE is_active = TRUE LIMIT 3');
-      schemes = fallback.rows;
+      // Build a simple eligibility-based query from the collected profile
+      const schemeResult = await query(`
+        SELECT id, name, benefit_amount_max, category, source_url
+        FROM schemes 
+        WHERE is_active = TRUE
+          AND (requires_student = FALSE OR $1 = FALSE)
+          AND (requires_farmer = FALSE OR $2 = TRUE)
+          AND (requires_bpl = FALSE OR $3 = TRUE)
+          AND (requires_bank_account = FALSE OR $4 = TRUE)
+        ORDER BY 
+          CASE WHEN requires_farmer = $2 THEN 0 ELSE 1 END,
+          benefit_amount_max DESC NULLS LAST
+        LIMIT 3
+      `, [
+        safeOcc === 'student',
+        ['farmer','marginal_farmer'].includes(safeOcc),
+        true, // everyone on IVR is assumed low-income
+        hasBank
+      ]);
+      schemes = schemeResult.rows;
+
+      const insResult = await query(`
+        SELECT id, name, annual_premium, coverage_amount, source_url
+        FROM insurance_policies
+        WHERE is_active = TRUE
+          AND (min_age IS NULL OR $1 >= min_age)
+          AND (max_age IS NULL OR $1 <= max_age)
+          AND (requires_bank_account = FALSE OR $2 = TRUE)
+        ORDER BY annual_premium ASC NULLS LAST
+        LIMIT 2
+      `, [parseInt(age,10) || 25, hasBank]);
+      insurance = insResult.rows;
+
+    } catch (dbErr) {
+      console.error('[IVR] DB recommendations error:', dbErr.message);
+      // Last resort fallback
+      const fb = await query('SELECT id, name FROM schemes WHERE is_active=TRUE LIMIT 2');
+      schemes = fb.rows;
     }
 
     // Build TwiML with results
@@ -338,11 +367,11 @@ router.post('/bank', async (req, res) => {
       if (topSchemes.length > 0) {
         resp.say({ language: v }, schemesHeader(lang));
         topSchemes.forEach((s, i) => {
+          const name = (s.name && s.name.en) ? s.name.en : (s.name_en || s.source_id || 'Scheme');
           const benefit = s.benefit_amount ? `, benefit: ${s.benefit_amount} rupees per year` : '';
-          resp.say({ language: v }, `${i + 1}. ${s.name_en}${benefit}.`);
-          if (s.benefit_description) {
-            resp.say({ language: v }, s.benefit_description.slice(0, 200));
-          }
+          resp.say({ language: v }, `${i + 1}. ${name}${benefit}.`);
+          const desc = s.benefits_text && s.benefits_text.en ? s.benefits_text.en : (s.benefit_description || '');
+          if (desc) resp.say({ language: v }, desc.slice(0, 200));
         });
       } else {
         resp.say({ language: v }, noSchemesMsg(lang));
@@ -353,8 +382,9 @@ router.post('/bank', async (req, res) => {
       if (topInsurance.length > 0) {
         resp.say({ language: v }, insuranceHeader(lang));
         topInsurance.forEach((p, i) => {
+          const name = (p.name && p.name.en) ? p.name.en : (p.name_en || p.source_id || 'Insurance');
           const prem = p.annual_premium === 0 ? 'free' : `${p.annual_premium} rupees per year`;
-          resp.say({ language: v }, `${i + 1}. ${p.name_en}. Premium: ${prem}. Coverage: ${(p.coverage_amount || 0) / 100000} lakh rupees.`);
+          resp.say({ language: v }, `${i + 1}. ${name}. Premium: ${prem}. Coverage: ${((p.coverage_amount || 0) / 100000).toFixed(1)} lakh rupees.`);
         });
       }
 
@@ -364,9 +394,16 @@ router.post('/bank', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[IVR] Error generating recommendations:', err);
+    console.error('[IVR] Bank route error:', err.message);
+    // Even on error - give the caller SOMETHING useful, not a failure message
     twiml(res, (resp) => {
-      resp.say({ language: langVoice(lang) }, 'Kshama karein, koi samasya aa gayi. Kripaya baad mein call karein. Dhanyawad.');
+      const v = langVoice(lang || 'hi');
+      resp.say({ language: v },
+        'Aapki jankari ke liye dhanyawad. ' +
+        'Sarkari yojanaon ki jankari ke liye arthsathi dot in par jayen. ' +
+        'PM KISAN, Ayushman Bharat, aur PMJJBY jaise yojanaon ka laabh uthayein. ' +
+        'Dhanyawad, jai hind.'
+      );
       resp.hangup();
     });
   }

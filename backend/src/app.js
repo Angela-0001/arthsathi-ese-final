@@ -20,12 +20,17 @@ const usersRoutes   = require('./routes/users');
 const { schemesRouter, insuranceRouter } = require('./routes/schemes');
 const documentsRoutes = require('./routes/documents');
 const voiceRoutes   = require('./routes/voice');
-const ivrRoutes     = require('./routes/ivr');
+const ivrRoutes    = require('./routes/ivr');
+const ivrCallRoutes = require('./routes/ivr_call');
 const i18nRoutes    = require('./routes/i18n');
 const { isEngineHealthy } = require('./services/engineService');
 const errorHandler  = require('./middleware/errorHandler');
 
 const app = express();
+
+// Trust proxy — required when running behind ngrok/reverse proxy
+// This fixes express-rate-limit's X-Forwarded-For validation error
+app.set('trust proxy', 1);
 
 // ---------------------------------------------------------------------------
 // Security middleware
@@ -84,6 +89,7 @@ app.use('/api/insurance', insuranceRouter);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/voice',     voiceRoutes);
 app.use('/api/ivr',       ivrRoutes);
+app.use('/api/ivr',       ivrCallRoutes);
 app.use('/api/i18n',      i18nRoutes);
 
 // Root — simple info response
