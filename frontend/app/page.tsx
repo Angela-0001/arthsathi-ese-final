@@ -11,18 +11,27 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { t, initLanguage, currentLanguage, LANGUAGES, type LanguageCode } from '../i18n';
 
 export default function LandingPage() {
   const router = useRouter();
   const [lang, setLang] = useState<LanguageCode>('hi');
   const [mounted, setMounted] = useState(false);
+  const [copiedIVR, setCopiedIVR] = useState(false);
 
   useEffect(() => {
     initLanguage();
     setLang(currentLanguage());
     setMounted(true);
   }, []);
+
+  function handleCopyIVR() {
+    navigator.clipboard.writeText('02248963501').then(() => {
+      setCopiedIVR(true);
+      setTimeout(() => setCopiedIVR(false), 2000);
+    });
+  }
 
   if (!mounted) return null;
 
@@ -102,6 +111,62 @@ export default function LandingPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Connect With Us */}
+        <div className="w-full max-w-md mb-10">
+          <h3 className="text-white font-bold text-xl mb-4 text-left">📲 Connect With Us</h3>
+          <div className="grid grid-cols-1 gap-4">
+            {/* IVR */}
+            <div className="flex items-start gap-4 p-4 rounded-2xl border-2 bg-orange-50 border-orange-200 bg-opacity-90">
+              <span className="text-4xl" role="img" aria-hidden="true">📞</span>
+              <div className="text-left flex-1">
+                <p className="font-bold text-gray-900 text-lg">IVR (Phone Call)</p>
+                <p className="text-gray-500 text-sm font-medium">Call: 02248963501</p>
+                <p className="text-gray-600 text-base mt-1">Call and get scheme info in Hindi, English or Marathi</p>
+                <button
+                  onClick={handleCopyIVR}
+                  className="mt-2 px-3 py-1 text-sm rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
+                >
+                  {copiedIVR ? 'Copied!' : 'Copy Number'}
+                </button>
+              </div>
+            </div>
+            {/* WhatsApp */}
+            <div className="flex items-start gap-4 p-4 rounded-2xl border-2 bg-green-50 border-green-200 bg-opacity-90">
+              <span className="text-4xl" role="img" aria-hidden="true">💬</span>
+              <div className="text-left flex-1">
+                <p className="font-bold text-gray-900 text-lg">WhatsApp</p>
+                <p className="text-gray-500 text-sm font-medium">Number: +14155238886</p>
+                <p className="text-gray-600 text-base mt-1">Chat on WhatsApp for scheme recommendations</p>
+                <a
+                  href="https://wa.me/14155238886"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-2 px-3 py-1 text-sm rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
+                >
+                  Open WhatsApp
+                </a>
+              </div>
+            </div>
+            {/* Telegram */}
+            <div className="flex items-start gap-4 p-4 rounded-2xl border-2 bg-blue-50 border-blue-200 bg-opacity-90">
+              <span className="text-4xl" role="img" aria-hidden="true">📱</span>
+              <div className="text-left flex-1">
+                <p className="font-bold text-gray-900 text-lg">Telegram</p>
+                <p className="text-gray-500 text-sm font-medium">Bot: @arthsathi_demo_bot</p>
+                <p className="text-gray-600 text-base mt-1">Chat on Telegram for scheme info</p>
+                <a
+                  href="https://t.me/arthsathi_demo_bot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-2 px-3 py-1 text-sm rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
+                >
+                  Open Telegram
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Main CTA */}
