@@ -25,6 +25,9 @@ const ivrCallRoutes = require('./routes/ivr_call');
 const i18nRoutes    = require('./routes/i18n');
 const { isEngineHealthy } = require('./services/engineService');
 const errorHandler  = require('./middleware/errorHandler');
+const telegramRoutes  = require('./routes/telegram');
+const whatsappRoutes  = require('./routes/whatsapp');
+const channelsRoutes  = require('./routes/channels');
 
 const app = express();
 
@@ -91,6 +94,9 @@ app.use('/api/voice',     voiceRoutes);
 app.use('/api/ivr',       ivrRoutes);
 app.use('/api/ivr',       ivrCallRoutes);
 app.use('/api/i18n',      i18nRoutes);
+app.use('/api/telegram',  telegramRoutes);
+app.use('/api/whatsapp',  whatsappRoutes);
+app.use('/api/channels',  channelsRoutes);
 
 // Root — simple info response
 app.get('/', (req, res) => {
