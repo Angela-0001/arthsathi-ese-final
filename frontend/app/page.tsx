@@ -172,14 +172,14 @@ export default function LandingPage() {
         {/* Main CTA */}
         <button
           className="btn-primary max-w-md shadow-lg shadow-primary-dark/30"
-          onClick={() => router.push('/onboarding')}
+          onClick={() => router.push('/auth')}
         >
           <span className="text-2xl" role="img" aria-hidden="true">✅</span>
           {t('landing.cta')}
         </button>
 
         <p className="mt-5 text-white/60 text-sm">
-          Free • No registration required • Works offline
+          Free • Quick registration • Works offline
         </p>
       </section>
 

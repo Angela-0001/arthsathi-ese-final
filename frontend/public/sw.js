@@ -8,11 +8,11 @@
  *   Write failures (offline) → Queue in IndexedDB, retry on reconnect
  */
 
-const CACHE_VERSION  = 'as-v3';
+const CACHE_VERSION  = 'as-v5';
 const SHELL_CACHE    = `${CACHE_VERSION}-shell`;
 const API_CACHE      = `${CACHE_VERSION}-api`;
 
-const PRECACHE_URLS  = ['/', '/onboarding', '/results', '/document', '/manifest.json'];
+const PRECACHE_URLS  = ['/', '/auth', '/onboarding', '/results', '/document', '/manifest.json'];
 
 // ── Install: precache app shell ────────────────────────────────────────────
 self.addEventListener('install', (event) => {
@@ -39,6 +39,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // Never intercept Next.js internal chunks
+  if (url.pathname.startsWith('/_next/')) return;
 
   // Skip non-GET Chrome extensions etc.
   if (!['http:', 'https:'].includes(url.protocol)) return;

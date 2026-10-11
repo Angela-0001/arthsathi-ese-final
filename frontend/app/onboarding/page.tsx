@@ -203,6 +203,14 @@ export default function OnboardingPage() {
     localStorage.setItem('as_profile', JSON.stringify(profile));
   }, [profile]);
 
+  // Guard: require login
+  useEffect(() => {
+    const user = localStorage.getItem('arthsathi_user');
+    if (!user) {
+      router.push('/auth');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const activeSteps = getActiveSteps(profile);
   const step = activeSteps[stepIdx];
   const isLast = stepIdx === activeSteps.length - 1;
