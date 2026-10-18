@@ -6,14 +6,15 @@
  * - Global CSS
  * - PWA meta tags and manifest link
  * - Language/direction initialisation from localStorage
+ * - Navbar (desktop) and MobileNav (mobile) - hidden on /auth page
  */
 
 import type { Metadata, Viewport } from 'next';
 import { Noto_Sans } from 'next/font/google';
 import '../styles/globals.css';
 import OfflineBanner from '../components/ui/OfflineBanner';
-import LanguageSwitcher from '../components/LanguageSwitcher';
 import LanguageInitializer from '../components/LanguageInitializer';
+import LayoutContent from './LayoutContent';
 
 // Noto Sans - latin + devanagari subsets (available via next/font/google)
 // Tamil, Telugu, Bengali loaded via separate Noto font families below
@@ -42,7 +43,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#1B6B3A',
+  themeColor: '#16A34A',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1, // Prevent accidental zoom on form inputs (common on Android)
@@ -66,7 +67,7 @@ export default function RootLayout({
       <body className="bg-surface min-h-screen">
         <LanguageInitializer />
         <OfflineBanner />
-        {children}
+        <LayoutContent>{children}</LayoutContent>
         {/* Service worker registration */}
         <script
           dangerouslySetInnerHTML={{

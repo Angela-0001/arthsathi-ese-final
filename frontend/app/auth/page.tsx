@@ -1,12 +1,25 @@
+/**
+ * ArthSathi — Authentication Page (Redesigned)
+ *
+ * Clean login/signup with phone or email
+ * Preserves exact API contract: POST /api/users
+ * Stores user.id in 'as_user_id' localStorage
+ * Redirects to /dashboard after success
+ */
+
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 interface StoredUser {
   id: string;
   phone_number: string | null;
+  email: string | null;
   full_name: string | null;
   preferred_language: string;
   interaction_mode: string;
@@ -14,30 +27,22 @@ interface StoredUser {
 
 export default function AuthPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('register');
 
   // Shared fields
   const [phone, setPhone] = useState('');
   const [useEmail, setUseEmail] = useState(false);
   const [email, setEmail] = useState('');
-
-  // Login-only
-  const [password, setPassword] = useState('');
-
-  // Register-only
   const [name, setName] = useState('');
 
   // State
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showConnect, setShowConnect] = useState(false);
-  const [userId, setUserId] = useState('');
 
   function resetForm() {
     setError('');
     setPhone('');
     setEmail('');
-    setPassword('');
     setName('');
     setUseEmail(false);
   }
@@ -47,11 +52,17 @@ export default function AuthPage() {
     resetForm();
   }
 
-  async function handleRegister() {
+  async function handleSubmit() {
     setError('');
     const identifier = useEmail ? email.trim() : phone.trim();
+    
     if (!identifier) {
       setError(useEmail ? 'Please enter your email address.' : 'Please enter your phone number.');
+      return;
+    }
+
+    if (activeTab === 'register' && !name.trim()) {
+      setError('Please enter your name.');
       return;
     }
 
@@ -59,13 +70,18 @@ export default function AuthPage() {
     try {
       const body: Record<string, string | null> = {
         preferred_language: 'hi',
+        interaction_mode: 'text',
         full_name: name.trim() || null,
+        state: null,
+        district: null,
       };
+
       if (useEmail) {
         body.email = identifier;
         body.phone_number = null;
       } else {
         body.phone_number = identifier;
+        body.email = null;
       }
 
       const res = await fetch(`${API}/api/users`, {
@@ -77,166 +93,77 @@ export default function AuthPage() {
       const responseData = await res.json();
 
       if (!res.ok) {
-        const errMsg = responseData?.error?.message || responseData?.message || responseData?.error || 'Registration failed. Please try again.';
+        const errMsg = responseData?.error?.message || responseData?.message || responseData?.error || 
+                      (activeTab === 'login' ? 'Login failed. Please try again.' : 'Registration failed. Please try again.');
         setError(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
         return;
       }
 
       const user: StoredUser = responseData.data;
+      
+      // Store user.id in 'as_user_id' (consistent key)
+      localStorage.setItem('as_user_id', user.id);
+      
+      // Also store full user object for backward compatibility
       localStorage.setItem('arthsathi_user', JSON.stringify(user));
-      setUserId(user.id);
-      setShowConnect(true);
-    } catch {
+      
+      // Redirect to dashboard
+      router.push('/dashboard');
+    } catch (err) {
       setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleLogin() {
-    setError('');
-    const identifier = useEmail ? email.trim() : phone.trim();
-    if (!identifier) {
-      setError(useEmail ? 'Please enter your email address.' : 'Please enter your phone number.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const body: Record<string, string | null> = {
-        preferred_language: 'hi',
-        full_name: null,
-      };
-      if (useEmail) {
-        body.email = identifier;
-        body.phone_number = null;
-      } else {
-        body.phone_number = identifier;
-      }
-
-      const res = await fetch(`${API}/api/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const responseData = await res.json();
-
-      if (!res.ok) {
-        const errMsg = responseData?.error?.message || responseData?.message || responseData?.error || 'Login failed. Please try again.';
-        setError(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
-        return;
-      }
-
-      const user: StoredUser = responseData.data;
-      localStorage.setItem('arthsathi_user', JSON.stringify(user));
-      router.push('/onboarding');
-    } catch {
-      setError('Network error. Please check your connection and try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleSubmit() {
-    if (activeTab === 'register') {
-      handleRegister();
-    } else {
-      handleLogin();
-    }
-  }
-
-  // ── Connect screen shown after successful register ────────────────────
-  if (showConnect) {
-    return (
-      <main className="min-h-screen bg-gradient-to-b from-primary to-primary-light flex flex-col items-center justify-center px-5 py-10">
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 text-center">
-          <div className="text-6xl mb-4">🎉</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to ArthSathi!</h1>
-          <p className="text-gray-600 text-base mb-8">
-            Link your phone to get scheme info on WhatsApp and Telegram too.
-          </p>
-
-          <div className="space-y-4">
-            <a
-              href={`https://wa.me/14155238886?text=Hi+ArthSathi+my+id+is+${userId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full min-h-[48px] py-3 px-5 rounded-2xl bg-green-500 text-white font-bold text-lg hover:bg-green-600 transition-colors"
-            >
-              <span>💬</span> Connect on WhatsApp
-            </a>
-
-            <a
-              href={`https://t.me/arthsathi_demo_bot?start=${userId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full min-h-[48px] py-3 px-5 rounded-2xl bg-blue-500 text-white font-bold text-lg hover:bg-blue-600 transition-colors"
-            >
-              <span>📱</span> Open Telegram Bot
-            </a>
-
-            <button
-              onClick={() => router.push('/onboarding')}
-              className="btn-primary"
-            >
-              Continue to App →
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  // ── Auth form ─────────────────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-gradient-to-b from-primary to-primary-light flex flex-col items-center justify-center px-5 py-10">
+    <main className="min-h-screen bg-gradient-to-br from-primary via-primary to-secondary flex flex-col items-center justify-center px-5 py-10">
       <div className="w-full max-w-md">
         {/* Logo / branding */}
         <div className="text-center mb-8">
-          <div className="text-6xl mb-3" role="img" aria-label="ArthSathi logo">🌱</div>
-          <h1 className="text-3xl font-bold text-white">ArthSathi</h1>
-          <p className="text-white/80 text-base mt-1">Your Financial Guide</p>
+          <div className="text-7xl mb-4" role="img" aria-label="ArthSathi logo">🌱</div>
+          <h1 className="text-4xl font-bold text-white mb-2">ArthSathi</h1>
+          <p className="text-white/80 text-lg">{activeTab === 'login' ? 'Welcome Back' : 'Get Started for Free'}</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
+        <Card shadow="lg" padding="sm" className="overflow-hidden">
           {/* Tabs */}
-          <div className="flex">
+          <div className="flex -m-1 mb-6">
+            <button
+              onClick={() => switchTab('register')}
+              className={`flex-1 py-4 text-lg font-bold transition-all rounded-xl ${
+                activeTab === 'register'
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-transparent text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              Sign Up
+            </button>
             <button
               onClick={() => switchTab('login')}
-              className={`flex-1 py-4 text-lg font-bold transition-colors ${
+              className={`flex-1 py-4 text-lg font-bold transition-all rounded-xl ${
                 activeTab === 'login'
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-transparent text-gray-500 hover:bg-gray-50'
               }`}
             >
               Login
             </button>
-            <button
-              onClick={() => switchTab('register')}
-              className={`flex-1 py-4 text-lg font-bold transition-colors ${
-                activeTab === 'register'
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
-            >
-              Register
-            </button>
           </div>
 
           {/* Form body */}
-          <div className="p-6 space-y-4">
-            {/* Register-only: name field */}
+          <div className="px-2 space-y-5">
+            {/* Name field (register only) */}
             {activeTab === 'register' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name <span className="text-gray-400 font-normal">(optional)</span>
+                <label className="block text-base font-semibold text-gray-700 mb-2">
+                  Your Name
                 </label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="Your name"
+                  placeholder="Enter your full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
@@ -247,13 +174,13 @@ export default function AuthPage() {
             {/* Phone / Email input */}
             {!useEmail ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-base font-semibold text-gray-700 mb-2">
                   Phone Number
                 </label>
                 <input
                   type="tel"
                   className="form-input"
-                  placeholder="Phone number e.g. 9876543210"
+                  placeholder="9876543210"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   inputMode="numeric"
@@ -262,14 +189,14 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => { setUseEmail(true); setPhone(''); }}
-                  className="mt-1 text-primary text-sm underline"
+                  className="mt-2 text-primary text-base font-medium underline"
                 >
-                  or use email
+                  or use email instead
                 </button>
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-base font-semibold text-gray-700 mb-2">
                   Email Address
                 </label>
                 <input
@@ -283,49 +210,39 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => { setUseEmail(false); setEmail(''); }}
-                  className="mt-1 text-primary text-sm underline"
+                  className="mt-2 text-primary text-base font-medium underline"
                 >
-                  or use phone number
+                  or use phone number instead
                 </button>
-              </div>
-            )}
-
-            {/* Login-only: password field */}
-            {activeTab === 'login' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  className="form-input"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                />
               </div>
             )}
 
             {/* Error message */}
             {error && (
-              <p role="alert" className="text-red-600 text-sm font-medium bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                {error}
-              </p>
+              <div role="alert" className="bg-red-50 border-2 border-red-200 rounded-2xl px-4 py-3">
+                <p className="text-red-700 text-base font-medium">{error}</p>
+              </div>
             )}
 
             {/* Submit button */}
-            <button
+            <Button
+              variant="primary"
+              size="lg"
+              loading={loading}
               onClick={handleSubmit}
-              disabled={loading}
-              className="btn-primary"
             >
-              {loading ? 'Loading...' : activeTab === 'login' ? 'Login' : 'Create Account'}
-            </button>
-          </div>
-        </div>
+              {activeTab === 'login' ? 'Login' : 'Create Account'}
+            </Button>
 
-        <p className="text-center text-white/60 text-sm mt-6">
+            {activeTab === 'register' && (
+              <p className="text-center text-gray-500 text-sm">
+                By signing up, you agree to use ArthSathi for free information. We never share your data.
+              </p>
+            )}
+          </div>
+        </Card>
+
+        <p className="text-center text-white/70 text-base mt-6">
           Free • Quick registration • Works offline
         </p>
       </div>

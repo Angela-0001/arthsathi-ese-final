@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Redesign core pages (Homepage, Auth, Dashboard) with new UI components and navigation. Homepage: hero section, how-it-works, feature highlights, IVR/WhatsApp/Telegram info, footer. Auth: clean login/signup with phone or email, preserve existing POST /api/users flow. Dashboard: NEW protected route at /dashboard with welcome message and action cards for Eligibility/Document/Connect/Call/Results.",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "Update c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\layout.tsx: import and include new Navbar and MobileNav components (conditionally show based on route - hide on auth pages), keep existing LanguageInitializer and OfflineBanner, preserve PWA metadata and service worker registration, ensure Noto Sans font remains",
     "Redesign c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\page.tsx (Homepage): use new Button and Card components from FEAT-001. Structure: (1) Hero section with 🌱 icon, 'ArthSathi' heading, tagline from t('app.tagline'), large CTA button 'Check My Eligibility' → /auth, (2) How It Works section with 3 numbered steps (Answer questions, See schemes, Apply) using Card components with icons, (3) Feature highlights grid with 4 cards (Government Schemes 🌾, Insurance Plans 🛡️, Document Checker 📄, Voice Support 🎤), (4) Connect section with IVR phone number from process.env.NEXT_PUBLIC_IVR_NUMBER (fallback: 02248963501), WhatsApp link using process.env.NEXT_PUBLIC_WHATSAPP_NUMBER, Telegram link using process.env.NEXT_PUBLIC_TELEGRAM_USERNAME, (5) Footer with IVR number, MIT license, Made for rural India. Preserve existing language switcher. Use new color palette throughout.",
@@ -30,5 +30,5 @@
     "Test on mobile viewport (DevTools) and verify responsive layout, hamburger menu, bottom tab bar (if implemented)"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All steps completed successfully. Homepage redesigned with hero, how-it-works, features, connect section (IVR/WhatsApp/Telegram), and footer. Auth page redesigned with clean tabbed UI (Sign Up/Login), uses new Card and Button components, stores user.id in 'as_user_id' localStorage (fixing inconsistency from old 'arthsathi_user' key), redirects to /dashboard after success. NEW /dashboard page created at /dashboard with 6 action cards (Check Eligibility, My Schemes, Document Checker, WhatsApp, Telegram, IVR modal), protected route with auth guard. Onboarding page updated to use 'as_user_id' for auth check (preserving all existing adaptive questionnaire logic). Layout.tsx updated to include Navbar (desktop) and MobileNav (mobile), conditionally hidden on /auth page. Created LayoutContent.tsx client component to handle navigation. .env.example created with NEXT_PUBLIC_API_URL, NEXT_PUBLIC_IVR_NUMBER, NEXT_PUBLIC_WHATSAPP_NUMBER, NEXT_PUBLIC_TELEGRAM_USERNAME. Build successful with no errors."
 }

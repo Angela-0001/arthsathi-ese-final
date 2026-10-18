@@ -1,191 +1,192 @@
 /**
- * ArthSathi — Landing Page
+ * ArthSathi — Homepage (Redesigned)
  *
- * First screen the user sees. Designed for:
- * - Low-literacy users: large icons, minimal text, clear CTA
- * - Slow connections: no heavy images, all inline SVG icons
- * - All languages: text is loaded from i18n keys
+ * Public landing page with hero, how-it-works, features, connect info, footer
  */
 
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { t, initLanguage, currentLanguage, LANGUAGES, type LanguageCode } from '../i18n';
+import { t, initLanguage, currentLanguage, type LanguageCode } from '../i18n';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
 
-export default function LandingPage() {
+export default function Homepage() {
   const router = useRouter();
-  const [lang, setLang] = useState<LanguageCode>('hi');
   const [mounted, setMounted] = useState(false);
-  const [copiedIVR, setCopiedIVR] = useState(false);
 
   useEffect(() => {
     initLanguage();
-    setLang(currentLanguage());
     setMounted(true);
   }, []);
 
-  function handleCopyIVR() {
-    navigator.clipboard.writeText('02248963501').then(() => {
-      setCopiedIVR(true);
-      setTimeout(() => setCopiedIVR(false), 2000);
-    });
-  }
-
   if (!mounted) return null;
 
-  const features = [
-    {
-      icon: '🌾',
-      titleKey: 'landing.feature_1_title',
-      descKey: 'landing.feature_1_desc',
-      color: 'bg-green-50 border-green-200',
-    },
-    {
-      icon: '🛡️',
-      titleKey: 'landing.feature_2_title',
-      descKey: 'landing.feature_2_desc',
-      color: 'bg-blue-50 border-blue-200',
-    },
-    {
-      icon: '📄',
-      titleKey: 'landing.feature_3_title',
-      descKey: 'landing.feature_3_desc',
-      color: 'bg-amber-50 border-amber-200',
-    },
-  ];
+  const IVR_NUMBER = process.env.NEXT_PUBLIC_IVR_NUMBER || '02248963501';
+  const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '+14155238886';
+  const TELEGRAM = process.env.NEXT_PUBLIC_TELEGRAM_USERNAME || 'arthsathi_demo_bot';
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-primary to-primary-light flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-5 pt-10 pb-4">
-        <div className="text-white">
-          <h1 className="text-3xl font-bold">{t('app.name')}</h1>
-          <p className="text-white/80 text-base">{t('app.tagline')}</p>
-        </div>
-        {/* Language selector — always visible */}
-        <div className="relative">
-          <select
-            className="appearance-none bg-white/20 text-white border border-white/30
-                       rounded-xl px-3 py-2 text-base font-medium cursor-pointer
-                       focus:outline-none focus:ring-2 focus:ring-white/50 min-h-[48px]"
-            value={lang}
-            onChange={(e) => {
-              const newLang = e.target.value as LanguageCode;
-              setLang(newLang);
-              import('../i18n').then(({ setLanguage }) => {
-                setLanguage(newLang);
-                router.refresh();
-              });
-            }}
-            aria-label="Select language"
+    <main className="min-h-screen bg-surface">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-primary via-primary to-secondary text-white py-16 px-5">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="text-7xl mb-6" role="img" aria-label="ArthSathi logo">🌱</div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+            {t('landing.hero_title')}
+          </h1>
+          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto">
+            {t('landing.hero_sub')}
+          </p>
+          <Button
+            variant="accent"
+            size="lg"
+            icon="✅"
+            onClick={() => router.push('/auth')}
+            className="max-w-md mx-auto shadow-2xl"
           >
-            {(Object.entries(LANGUAGES) as [LanguageCode, { nativeName: string }][]).map(([code, info]) => (
-              <option key={code} value={code} className="text-gray-900 bg-white">
-                {info.nativeName}
-              </option>
+            {t('landing.cta')}
+          </Button>
+          <p className="mt-6 text-white/70 text-base">
+            {t('common.free')} • Quick registration • Works offline
+          </p>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-16 px-5 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
+            How ArthSathi Works
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { step: '1', icon: '📝', title: 'Answer Questions', desc: 'Tell us about yourself in your language — voice or text' },
+              { step: '2', icon: '🎯', title: 'See Your Schemes', desc: 'Get instant recommendations matched to your profile' },
+              { step: '3', icon: '✅', title: 'Apply & Get Help', desc: 'Apply directly or get help via WhatsApp, Telegram, or phone' },
+            ].map((item) => (
+              <Card key={item.step} padding="lg" hoverable className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary font-bold text-2xl mb-4">
+                  {item.step}
+                </div>
+                <div className="text-5xl mb-4">{item.icon}</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
+                <p className="text-gray-600 text-base">{item.desc}</p>
+              </Card>
             ))}
-          </select>
-        </div>
-      </header>
-
-      {/* Hero section */}
-      <section className="flex-1 flex flex-col items-center justify-center px-5 py-8 text-center">
-        <div className="text-7xl mb-6" role="img" aria-label="ArthSathi logo">🌱</div>
-        <h2 className="text-3xl font-bold text-white leading-tight mb-3">
-          {t('landing.hero_title')}
-        </h2>
-        <p className="text-xl text-white/85 mb-10 max-w-sm">
-          {t('landing.hero_sub')}
-        </p>
-
-        {/* Feature cards */}
-        <div className="grid grid-cols-1 gap-4 w-full max-w-md mb-10">
-          {features.map((f) => (
-            <div key={f.titleKey} className={`flex items-center gap-4 p-4 rounded-2xl border-2 ${f.color} bg-opacity-90`}>
-              <span className="text-4xl" role="img" aria-hidden="true">{f.icon}</span>
-              <div className="text-left">
-                <p className="font-bold text-gray-900 text-lg">{t(f.titleKey)}</p>
-                <p className="text-gray-600 text-base">{t(f.descKey)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Connect With Us */}
-        <div className="w-full max-w-md mb-10">
-          <h3 className="text-white font-bold text-xl mb-4 text-left">📲 Connect With Us</h3>
-          <div className="grid grid-cols-1 gap-4">
-            {/* IVR */}
-            <div className="flex items-start gap-4 p-4 rounded-2xl border-2 bg-orange-50 border-orange-200 bg-opacity-90">
-              <span className="text-4xl" role="img" aria-hidden="true">📞</span>
-              <div className="text-left flex-1">
-                <p className="font-bold text-gray-900 text-lg">IVR (Phone Call)</p>
-                <p className="text-gray-500 text-sm font-medium">Call: 02248963501</p>
-                <p className="text-gray-600 text-base mt-1">Call and get scheme info in Hindi, English or Marathi</p>
-                <button
-                  onClick={handleCopyIVR}
-                  className="mt-2 px-3 py-1 text-sm rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
-                >
-                  {copiedIVR ? 'Copied!' : 'Copy Number'}
-                </button>
-              </div>
-            </div>
-            {/* WhatsApp */}
-            <div className="flex items-start gap-4 p-4 rounded-2xl border-2 bg-green-50 border-green-200 bg-opacity-90">
-              <span className="text-4xl" role="img" aria-hidden="true">💬</span>
-              <div className="text-left flex-1">
-                <p className="font-bold text-gray-900 text-lg">WhatsApp</p>
-                <p className="text-gray-500 text-sm font-medium">Number: +14155238886</p>
-                <p className="text-gray-600 text-base mt-1">Chat on WhatsApp for scheme recommendations</p>
-                <a
-                  href="https://wa.me/14155238886"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-2 px-3 py-1 text-sm rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
-                >
-                  Open WhatsApp
-                </a>
-              </div>
-            </div>
-            {/* Telegram */}
-            <div className="flex items-start gap-4 p-4 rounded-2xl border-2 bg-blue-50 border-blue-200 bg-opacity-90">
-              <span className="text-4xl" role="img" aria-hidden="true">📱</span>
-              <div className="text-left flex-1">
-                <p className="font-bold text-gray-900 text-lg">Telegram</p>
-                <p className="text-gray-500 text-sm font-medium">Bot: @arthsathi_demo_bot</p>
-                <p className="text-gray-600 text-base mt-1">Chat on Telegram for scheme info</p>
-                <a
-                  href="https://t.me/arthsathi_demo_bot"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-2 px-3 py-1 text-sm rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
-                >
-                  Open Telegram
-                </a>
-              </div>
-            </div>
           </div>
         </div>
+      </section>
 
-        {/* Main CTA */}
-        <button
-          className="btn-primary max-w-md shadow-lg shadow-primary-dark/30"
-          onClick={() => router.push('/auth')}
-        >
-          <span className="text-2xl" role="img" aria-hidden="true">✅</span>
-          {t('landing.cta')}
-        </button>
+      {/* Feature Highlights */}
+      <section className="py-16 px-5 bg-surface">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
+            What You Can Do
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: '🌾', title: t('landing.feature_1_title'), desc: t('landing.feature_1_desc'), color: 'bg-green-50 border-green-200' },
+              { icon: '🛡️', title: t('landing.feature_2_title'), desc: t('landing.feature_2_desc'), color: 'bg-blue-50 border-blue-200' },
+              { icon: '📄', title: t('landing.feature_3_title'), desc: t('landing.feature_3_desc'), color: 'bg-amber-50 border-amber-200' },
+              { icon: '🎤', title: 'Voice Support', desc: 'Answer questions by speaking — works in all 6 languages', color: 'bg-purple-50 border-purple-200' },
+            ].map((feature, i) => (
+              <Card key={i} padding="lg" hoverable className={`${feature.color} border-2`}>
+                <div className="text-5xl mb-4 text-center">{feature.icon}</div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">{feature.title}</h3>
+                <p className="text-gray-600 text-base text-center">{feature.desc}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
 
-        <p className="mt-5 text-white/60 text-sm">
-          Free • Quick registration • Works offline
-        </p>
+      {/* Connect With Us */}
+      <section className="py-16 px-5 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
+            📲 Connect With ArthSathi
+          </h2>
+          <p className="text-center text-gray-600 text-lg mb-12 max-w-2xl mx-auto">
+            Use the app, or get help through your preferred channel
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* IVR */}
+            <Card padding="lg" hoverable className="text-center border-2 border-primary/20">
+              <div className="text-6xl mb-4">📞</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Call Us (IVR)</h3>
+              <p className="text-gray-600 text-base mb-4">Get scheme info by phone</p>
+              <a
+                href={`tel:${IVR_NUMBER}`}
+                className="inline-block px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary-dark transition-colors"
+              >
+                Call {IVR_NUMBER}
+              </a>
+            </Card>
+
+            {/* WhatsApp */}
+            <Card padding="lg" hoverable className="text-center border-2 border-green-200">
+              <div className="text-6xl mb-4">💬</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">WhatsApp</h3>
+              <p className="text-gray-600 text-base mb-4">Chat with us anytime</p>
+              <a
+                href={`https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-6 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-colors"
+              >
+                Open WhatsApp
+              </a>
+            </Card>
+
+            {/* Telegram */}
+            <Card padding="lg" hoverable className="text-center border-2 border-blue-200">
+              <div className="text-6xl mb-4">📱</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Telegram</h3>
+              <p className="text-gray-600 text-base mb-4">Message our bot</p>
+              <a
+                href={`https://t.me/${TELEGRAM}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-6 py-3 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-600 transition-colors"
+              >
+                Open Telegram
+              </a>
+            </Card>
+          </div>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="text-center text-white/50 text-sm pb-8 px-5">
-        <p>ArthSathi v1.0 · Made for rural India · MIT License</p>
+      <footer className="py-12 px-5 bg-gray-900 text-white">
+        <div className="max-w-6xl mx-auto text-center">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <span className="text-3xl" role="img" aria-label="Plant">🌱</span>
+            <span className="text-2xl font-bold">ArthSathi</span>
+          </div>
+          <p className="text-gray-400 text-base mb-4">
+            {t('app.tagline')} • Free, Multilingual, Always Available
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-6 mb-6 text-sm text-gray-400">
+            <a href={`tel:${IVR_NUMBER}`} className="hover:text-white transition-colors">
+              📞 IVR: {IVR_NUMBER}
+            </a>
+            <a href={`https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+              💬 WhatsApp
+            </a>
+            <a href={`https://t.me/${TELEGRAM}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+              📱 Telegram
+            </a>
+          </div>
+          <p className="text-gray-500 text-sm">
+            ArthSathi v1.0 · Made for rural India · MIT License
+          </p>
+          <p className="text-gray-600 text-xs mt-2">
+            Disclaimer: ArthSathi provides information only. Eligibility and scheme details are subject to government rules. We do not guarantee approval.
+          </p>
+        </div>
       </footer>
     </main>
   );

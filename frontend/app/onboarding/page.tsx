@@ -205,8 +205,8 @@ export default function OnboardingPage() {
 
   // Guard: require login
   useEffect(() => {
-    const user = localStorage.getItem('arthsathi_user');
-    if (!user) {
+    const userId = localStorage.getItem('as_user_id');
+    if (!userId) {
       router.push('/auth');
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
