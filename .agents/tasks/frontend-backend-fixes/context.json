@@ -1,0 +1,29 @@
+{
+  "project_type": "Next.js 15 (App Router) + Express.js backend + Python FastAPI recommendation engine",
+  "language": "TypeScript (frontend), JavaScript (backend), Python (ML engine)",
+  "build_system": "npm workspaces, Next.js build system",
+  "test_framework": "None - manual testing only",
+  "build_command": "cd frontend && npm run build",
+  "test_command": "Manual testing: npm run dev (frontend), node server.js (backend), python recommendation_engine.py (engine)",
+  "verification_instructions": "1. Start all three services (Python engine on :8001, backend on :3001, frontend on :3000). 2. Test full user flow: landing → auth → onboarding → results → document. 3. Test language switching on each page. 4. Test offline behavior and empty results states.",
+  "snapshot_or_generated_files": "None - no generated files to commit",
+  "environment_constraints": "Database (PostgreSQL) must be running on localhost:5432 with 'arthsathi' database and schema applied. Python engine must be running for recommendation features to work (backend falls back to cached data if engine is down).",
+  "contribution_requirements": "No specific CONTRIBUTING.md or AGENTS.md found. Standard Next.js and Express patterns apply.",
+  "key_patterns": "1. All pages use 'use client' directive for interactivity. 2. i18n uses path alias '@/i18n' pointing to frontend/i18n/index.ts. 3. API calls use environment variable NEXT_PUBLIC_API_URL (defaults to http://localhost:3001). 4. Backend routes follow pattern: success response = { success: true, data: ... }, error response = { success: false, error: { code, message } }. 5. Tailwind theme colors: primary=#1B6B3A (green), accent=#F5A623 (amber). 6. Minimum 48px touch targets everywhere (WCAG 2.5.5).",
+  "relevant_files": [
+    "frontend/app/layout.tsx",
+    "frontend/app/page.tsx",
+    "frontend/app/auth/page.tsx",
+    "frontend/app/onboarding/page.tsx",
+    "frontend/app/results/page.tsx",
+    "frontend/app/document/page.tsx",
+    "frontend/components/LanguageSwitcher.tsx",
+    "frontend/i18n/index.ts",
+    "frontend/tailwind.config.js",
+    "frontend/styles/globals.css",
+    "backend/src/routes/schemes.js",
+    "backend/src/routes/users.js",
+    "backend/src/services/engineService.js"
+  ],
+  "directory_structure": "frontend/ contains Next.js app (app/ for pages, components/ for reusable components, i18n/ for translations, lib/ for utilities, styles/ for CSS). backend/src/ contains Express routes (routes/), database connection (db.js), and services (services/). ml-model/ contains Python FastAPI recommendation engine (not modified in this task)."
+}

@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Redesign document checker page: change theme from amber to green (matching app primary color) and improve layout with responsive 2-column grid for desktop. Current page uses amber colors (bg-amber-600, bg-amber-50) inconsistent with rest of app, and stacks all content vertically even on wide screens.",
+  "status": "pending",
+  "steps": [
+    "1. In frontend/app/document/page.tsx line ~145 (header): Change bg-amber-600 to bg-primary, text remains text-white.",
+    "2. Line ~155 (main background): Change min-h-screen bg-amber-50 to min-h-screen bg-gray-50.",
+    "3. Line ~164 (button): Change bg-amber-600 hover:bg-amber-700 to bg-primary hover:bg-primary-dark.",
+    "4. Find all border-amber-200 and change to border-gray-200 (appears in multiple card components).",
+    "5. Line ~220 (card backgrounds): Change bg-amber-50 border-amber-200 to bg-gray-50 border-gray-200.",
+    "6. In the 'READY — Results' section (starting ~250): Change main container from 'space-y-4' to 'space-y-6' for better spacing.",
+    "7. Wrap the summary card and risk flags card in a responsive grid: <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>...summary card...risk flags card...</div>. Keep document preview image, overall risk badge, Q&A, and action buttons full-width (outside this grid).",
+    "8. Test on desktop (≥768px): summary and risk flags should appear side-by-side. Test on mobile (<768px): should stack vertically."
+  ],
+  "acceptance_criteria": [
+    "Document checker page header is green (bg-primary #1B6B3A) not amber",
+    "Page background is light gray (bg-gray-50) not amber",
+    "All buttons use primary green theme",
+    "Risk level indicators (red/yellow/green) remain unchanged - these are semantic colors",
+    "On desktop screens (≥768px), summary and risk flags appear side-by-side in 2 columns",
+    "On mobile screens (<768px), all content stacks vertically",
+    "Spacing between sections is increased to 24px (space-y-6) for better readability"
+  ],
+  "verification": [
+    "npm run dev and visit /document page",
+    "Visual check: header should be green, background light gray",
+    "Upload or take a photo of a test document and wait for processing",
+    "Once results appear, verify on desktop (resize browser ≥768px): summary text box and risk flags should be side-by-side",
+    "Resize browser to mobile width (<768px): summary and risk flags should stack vertically",
+    "Check that document image preview, overall risk badge, and Q&A section remain full-width",
+    "Verify buttons are green with proper hover states"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

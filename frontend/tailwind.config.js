@@ -6,21 +6,30 @@ module.exports = {
   ],
   theme: {
     extend: {
-      // ArthSathi brand colours — earthy, accessible, high-contrast
+      // ArthSathi brand colours — green theme, accessible, high-contrast
       colors: {
         primary: {
-          DEFAULT: '#1B6B3A',  // deep green (trust, growth)
-          light:   '#2E8B57',
-          dark:    '#0D4F2A',
+          DEFAULT: '#16A34A',  // green-600 (growth, trust, prosperity)
+          light:   '#22C55E',
+          dark:    '#15803D',
+        },
+        secondary: {
+          DEFAULT: '#059669',  // emerald-600 (harmony, nature)
+          light:   '#10B981',
+          dark:    '#047857',
         },
         accent: {
-          DEFAULT: '#F5A623',  // warm amber (energy, harvest)
-          light:   '#FBBF24',
-          dark:    '#D97706',
+          DEFAULT: '#0EA5E9',  // sky blue (clarity, accessibility)
+          light:   '#38BDF8',
+          dark:    '#0284C7',
         },
         surface: {
-          DEFAULT: '#FEFEFE',
-          alt:     '#F0F4F0',
+          DEFAULT: '#FAFAFA',  // off-white (clean, calm)
+          alt:     '#F5F5F5',
+        },
+        textDark: {
+          DEFAULT: '#1F2937',
+          light:   '#374151',
         },
         danger: '#DC2626',
         warning: '#F59E0B',

@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+websockets
+requests
+transformers
+torch
+gtts
+pydantic
+pydub
+imageio[ffmpeg]
+scikit-learn
+pandas

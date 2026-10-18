@@ -218,3 +218,66 @@ router.get('/user/:userId', async (req, res, next) => {
 });
 
 module.exports = router;
+
+// ---------------------------------------------------------------------------
+// POST /api/documents/analyze — direct analyze for bots (Telegram/WhatsApp)
+// Accepts multipart file, runs OCR inline, returns result immediately
+// ---------------------------------------------------------------------------
+const uploadAny = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 },
+});
+
+router.post('/analyze', uploadAny.single('file'), async (req, res, next) => {
+  let tempPath = null;
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    const lang = req.query.lang || req.body.lang || 'en';
+
+    // Write buffer to temp file
+    const os  = require('os');
+    const ext = req.file.originalname?.split('.').pop() || 'jpg';
+    tempPath  = path.join(os.tmpdir(), `analyze_${Date.now()}.${ext}`);
+    fs.writeFileSync(tempPath, req.file.buffer);
+
+    const result = await processDocument(tempPath, lang);
+
+    // Translate summary if language is not English
+    let translatedSummary = result.summary || 'Document processed.';
+    if (lang !== 'en') {
+      const { translate } = require('../services/translationService');
+      translatedSummary = await translate(result.summary || 'Document processed.', lang);
+    }
+
+    res.json({
+      success:    true,
+      summary:    translatedSummary,
+      risk_flags: result.risk_flags || [],
+      risk_level: result.risk_level || 'low',
+      raw_text:   result.raw_text   || '',
+    });
+
+  } catch (err) {
+    console.error('[Documents/analyze]', err.message);
+    
+    // Translate error message if language is not English
+    let errorMsg = 'Could not analyze document. Please send a clearer image.';
+    if (req.query.lang !== 'en' && req.body.lang !== 'en') {
+      const { translate } = require('../services/translationService');
+      errorMsg = await translate(errorMsg, req.query.lang || req.body.lang);
+    }
+    
+    res.status(500).json({
+      success:    false,
+      summary:    errorMsg,
+      risk_flags: [],
+      risk_level: 'unknown',
+      error:      err.message,
+    });
+  } finally {
+    if (tempPath && fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+  }
+});

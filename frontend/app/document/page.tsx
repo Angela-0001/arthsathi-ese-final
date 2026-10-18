@@ -51,7 +51,7 @@ export default function DocumentPage() {
   const [qaHistory,  setQaHist]   = useState<{ role: string; content: string }[]>([]);
   const [askingQ,    setAskingQ]  = useState(false);
   const [lang]                    = useState(() =>
-    typeof window !== 'undefined' ? (localStorage.getItem('as_lang') || 'en') : 'en'
+    typeof window !== 'undefined' ? (localStorage.getItem('arthsathi_lang') || 'hi') : 'hi'
   );
 
   const handleFile = useCallback(async (file: File) => {
@@ -125,42 +125,68 @@ export default function DocumentPage() {
   const riskLevel = result?.overall_risk || 'low';
 
   return (
-    <main className="min-h-screen bg-amber-50 flex flex-col max-w-lg mx-auto">
-      {/* Header */}
-      <header className="bg-amber-600 text-white px-5 pt-10 pb-5">
-        <button onClick={() => router.back()} className="text-white/80 text-sm mb-3 block min-h-[44px]">← Back</button>
-        <h1 className="text-2xl font-bold">📄 Document Safety Checker</h1>
-        <p className="text-white/80 text-sm mt-1">Photograph any agreement — we'll explain it in plain language</p>
-      </header>
+    <main className="min-h-screen bg-green-50 flex flex-col">
+      {/* Page Header */}
+      <div className="bg-primary text-white px-5 py-6">
+        <button onClick={() => router.back()} className="text-white/90 text-sm mb-3 flex items-center gap-2 min-h-[44px] hover:text-white transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </button>
+        <h1 className="text-3xl font-bold mb-2">📄 Document Checker</h1>
+        <p className="text-white/90 text-base">Upload any agreement — we'll explain it in plain language</p>
+      </div>
 
-      <div className="flex-1 px-4 py-5 space-y-4">
+      <div className="flex-1 px-4 py-6 max-w-4xl mx-auto w-full">
 
         {/* IDLE */}
         {status === 'idle' && (
-          <>
-            <button onClick={() => cameraRef.current?.click()}
-              className="btn-primary bg-amber-600 hover:bg-amber-700">
-              <span className="text-3xl">📷</span> Take a Photo
-            </button>
-            <input ref={cameraRef} type="file" accept="image/*" capture="environment"
-              className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+          <div className="grid md:grid-cols-2 gap-4 mb-8">
+            {/* Upload buttons */}
+            <div className="space-y-4">
+              <button onClick={() => cameraRef.current?.click()}
+                className="w-full btn-primary bg-primary hover:bg-primary-dark flex items-center justify-center gap-3 py-6 text-lg">
+                <span className="text-4xl">📷</span>
+                <span>Take a Photo</span>
+              </button>
+              <input ref={cameraRef} type="file" accept="image/*" capture="environment"
+                className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
 
-            <button onClick={() => fileRef.current?.click()} className="btn-secondary">
-              <span className="text-3xl">📁</span> Upload Image
-            </button>
-            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp"
-              className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+              <button onClick={() => fileRef.current?.click()} className="w-full btn-secondary flex items-center justify-center gap-3 py-6 text-lg">
+                <span className="text-4xl">📁</span>
+                <span>Upload from Gallery</span>
+              </button>
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp"
+                className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+            </div>
 
-            <div className="bg-white rounded-3xl border border-amber-200 p-4">
-              <p className="font-semibold text-gray-800 mb-2">📋 Tips for best results</p>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Place document on dark flat surface</li>
-                <li>• Good lighting, no shadows or glare</li>
-                <li>• Hold phone directly above, all text visible</li>
-                <li>• Works with: loan agreements, rental deeds, insurance forms</li>
+            {/* Tips card */}
+            <div className="bg-white rounded-2xl border-2 border-green-200 p-6 shadow-sm">
+              <h3 className="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+                <span>📋</span>
+                Tips for Best Results
+              </h3>
+              <ul className="space-y-3 text-sm text-gray-700">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">•</span>
+                  <span>Place document on dark flat surface</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">•</span>
+                  <span>Good lighting, avoid shadows or glare</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">•</span>
+                  <span>Hold phone directly above, capture all text</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">•</span>
+                  <span>Works with: loan agreements, rental deeds, insurance forms</span>
+                </li>
               </ul>
             </div>
-          </>
+          </div>
         )}
 
         {/* UPLOADING / PROCESSING */}
@@ -186,15 +212,20 @@ export default function DocumentPage() {
 
         {/* READY — Results */}
         {status === 'ready' && result && (
-          <>
-            {preview && <img src={preview} alt="doc" className="max-h-28 rounded-2xl shadow object-contain mx-auto" />}
+          <div className="space-y-6">
+            {/* Document preview */}
+            {preview && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <img src={preview} alt="doc" className="max-h-64 rounded-xl object-contain mx-auto" />
+              </div>
+            )}
 
             {/* Overall risk badge */}
-            <div className={`rounded-3xl border-2 p-4 ${RISK_COLORS[riskLevel]}`}>
-              <div className="flex items-center gap-3">
-                <span className="text-4xl">{RISK_EMOJI[riskLevel]}</span>
-                <div>
-                  <p className="font-bold text-xl">
+            <div className={`rounded-2xl border-2 p-6 shadow-md ${RISK_COLORS[riskLevel]}`}>
+              <div className="flex items-center gap-4">
+                <span className="text-5xl">{RISK_EMOJI[riskLevel]}</span>
+                <div className="flex-1">
+                  <p className="font-bold text-xl mb-1">
                     {riskLevel === 'high' || riskLevel === 'critical'
                       ? 'HIGH RISK — Read carefully before signing'
                       : riskLevel === 'medium'
@@ -202,8 +233,9 @@ export default function DocumentPage() {
                       : 'LOW RISK — Looks mostly okay'}
                   </p>
                   {result.ocr_confidence > 0 && (
-                    <p className="text-sm opacity-70">OCR confidence: {result.ocr_confidence.toFixed(0)}%
-                      {result.llm_model_used && ` | Model: ${result.llm_model_used}`}
+                    <p className="text-sm opacity-70">
+                      OCR confidence: {result.ocr_confidence.toFixed(0)}%
+                      {result.llm_model_used && ` • Model: ${result.llm_model_used}`}
                     </p>
                   )}
                 </div>
@@ -211,8 +243,11 @@ export default function DocumentPage() {
             </div>
 
             {/* Summary */}
-            <div className="bg-white rounded-3xl border border-gray-200 p-5">
-              <h2 className="font-bold text-gray-900 text-xl mb-3">📝 What This Document Says</h2>
+            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
+              <h2 className="font-bold text-gray-900 text-xl mb-4 flex items-center gap-2">
+                <span>📝</span>
+                What This Document Says
+              </h2>
               <p className="text-gray-700 text-base whitespace-pre-wrap leading-relaxed">
                 {result.summary_text || 'Could not generate summary. Please ensure the image is clear.'}
               </p>
@@ -220,16 +255,23 @@ export default function DocumentPage() {
 
             {/* Risk flags */}
             {result.risk_flags && result.risk_flags.length > 0 && (
-              <div className="bg-white rounded-3xl border border-red-200 p-5">
-                <h2 className="font-bold text-red-800 text-xl mb-3">
-                  ⚠️ Caution: Important Points ({result.risk_flags.length})
+              <div className="bg-white rounded-2xl border-2 border-red-200 p-6 shadow-sm">
+                <h2 className="font-bold text-red-800 text-xl mb-4 flex items-center gap-2">
+                  <span>⚠️</span>
+                  Important Points to Check ({result.risk_flags.length})
                 </h2>
                 <div className="space-y-3">
                   {result.risk_flags.map((f, idx) => (
-                    <div key={idx} className={`p-3 rounded-2xl border ${RISK_COLORS[f.severity]}`}>
-                      <p className="font-bold text-base capitalize">{RISK_EMOJI[f.severity]} {f.risk_type.replace(/_/g,' ')}</p>
-                      <p className="text-sm mt-1">{f.explanation}</p>
-                      {f.context && <p className="text-xs mt-1 italic opacity-60 truncate">"{f.context.slice(0,100)}"</p>}
+                    <div key={idx} className={`p-4 rounded-xl border-2 ${RISK_COLORS[f.severity]}`}>
+                      <p className="font-bold text-base capitalize mb-2">
+                        {RISK_EMOJI[f.severity]} {f.risk_type.replace(/_/g,' ')}
+                      </p>
+                      <p className="text-sm leading-relaxed">{f.explanation}</p>
+                      {f.context && (
+                        <p className="text-xs mt-2 italic opacity-60 border-t pt-2 mt-2">
+                          Context: "{f.context.slice(0,150)}..."
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -238,13 +280,18 @@ export default function DocumentPage() {
 
             {/* Q&A History */}
             {qaHistory.length > 0 && (
-              <div className="bg-white rounded-3xl border border-gray-200 p-5">
-                <h2 className="font-bold text-gray-800 text-lg mb-3">💬 Questions & Answers</h2>
-                <div className="space-y-2">
+              <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
+                <h2 className="font-bold text-gray-800 text-xl mb-4 flex items-center gap-2">
+                  <span>💬</span>
+                  Questions & Answers
+                </h2>
+                <div className="space-y-3">
                   {qaHistory.map((m, i) => (
-                    <div key={i} className={`p-3 rounded-xl text-sm ${m.role === 'user' ? 'bg-primary/10 text-gray-900' : 'bg-gray-100 text-gray-700'}`}>
-                      <span className="font-semibold">{m.role === 'user' ? 'You: ' : 'ArthSathi: '}</span>
-                      {m.content}
+                    <div key={i} className={`p-4 rounded-xl ${m.role === 'user' ? 'bg-green-50 border-2 border-green-200' : 'bg-gray-50 border-2 border-gray-200'}`}>
+                      <p className="font-semibold text-sm mb-1 text-gray-600">
+                        {m.role === 'user' ? '👤 You' : '🤖 ArthSathi'}
+                      </p>
+                      <p className="text-gray-900">{m.content}</p>
                     </div>
                   ))}
                 </div>
@@ -252,23 +299,30 @@ export default function DocumentPage() {
             )}
 
             {/* Ask a question */}
-            <div className="bg-white rounded-3xl border border-gray-200 p-5">
-              <h2 className="font-bold text-gray-800 text-lg mb-3">❓ Ask about this document</h2>
-              <p className="text-xs text-gray-500 mb-3">ℹ️ This is not legal advice. For important decisions, consult NALSA/DLSA Legal Aid (helpline: 15100)</p>
-              <div className="flex gap-2">
-                <input type="text" className="form-input flex-1 text-sm"
+            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
+              <h2 className="font-bold text-gray-800 text-xl mb-3 flex items-center gap-2">
+                <span>❓</span>
+                Ask About This Document
+              </h2>
+              <p className="text-xs text-gray-500 mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                ℹ️ This is not legal advice. For important decisions, consult NALSA/DLSA Legal Aid (helpline: 15100)
+              </p>
+              <div className="flex gap-3">
+                <input type="text" className="form-input flex-1"
                   value={question} onChange={e => setQuestion(e.target.value)}
-                  placeholder="What is the interest rate?"
+                  placeholder="E.g., What is the interest rate?"
                   onKeyDown={e => e.key === 'Enter' && askQuestion()} />
                 <button onClick={askQuestion} disabled={askingQ || !question.trim()}
-                  className="btn-primary flex-shrink-0 w-auto px-4 py-3 text-sm">
+                  className="btn-primary flex-shrink-0 px-6 py-3 font-semibold">
                   {askingQ ? '...' : 'Ask →'}
                 </button>
               </div>
             </div>
 
-            <button className="btn-secondary" onClick={reset}>📷 Check Another Document</button>
-          </>
+            <button className="btn-secondary w-full py-4 text-lg font-semibold" onClick={reset}>
+              📷 Check Another Document
+            </button>
+          </div>
         )}
       </div>
     </main>

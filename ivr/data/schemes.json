@@ -1,0 +1,135 @@
+{
+  "schemes": [
+    {
+      "scheme_id": "PMKISAN_DEMO",
+      "name": {
+        "hi": "पीएम किसान सम्मान निधि",
+        "en": "PM-KISAN (Kisan Samman Nidhi)",
+        "mr": "पीएम किसान सन्मान निधी",
+        "pa": "ਪੀਐਮ ਕਿਸਾਨ ਸਨਮਾਨ ਨਿਧੀ"
+      },
+      "description": {
+        "hi": "किसानों को प्रति वर्ष 6000 रुपये की आर्थिक सहायता",
+        "en": "Direct income support of ₹6000 per year to farmers",
+        "mr": "शेतकऱ्यांना दरवर्षी ₹6000 आर्थिक मदत",
+        "pa": "ਕਿਸਾਨਾਂ ਨੂੰ ਹਰ ਸਾਲ ₹6000 ਦੀ ਆਰਥਿਕ ਸਹਾਇਤਾ"
+      },
+      "official_source": "https://pmkisan.gov.in/",
+      "last_verified": "2025-01-01",
+      "data_status": "DEMO_ONLY",
+      "required_fields": ["occupation"],
+      "eligibility_rules": {
+        "occupation": ["farmer", "kisan", "agriculture", "kheti", "किसान", "खेती"]
+      },
+      "exclusion_rules": {},
+      "required_documents": ["Aadhaar", "Land Records", "Bank Account"],
+      "benefits": {
+        "hi": "₹6000 प्रति वर्ष 3 किस्तों में",
+        "en": "₹6000 per year in 3 installments",
+        "mr": "₹6000 दरवर्षी 3 हप्त्यांमध्ये",
+        "pa": "₹6000 ਹਰ ਸਾਲ 3 ਕਿਸ਼ਤਾਂ ਵਿੱਚ"
+      },
+      "demo_rule": true,
+      "note": "DEMO ONLY - not official eligibility criteria"
+    },
+    {
+      "scheme_id": "PMAY_DEMO",
+      "name": {
+        "hi": "प्रधानमंत्री आवास योजना",
+        "en": "Pradhan Mantri Awas Yojana (PMAY)",
+        "mr": "प्रधानमंत्री आवास योजना",
+        "pa": "ਪ੍ਰਧਾਨ ਮੰਤਰੀ ਆਵਾਸ ਯੋਜਨਾ"
+      },
+      "description": {
+        "hi": "गरीब और मध्यम वर्ग के लिए घर बनाने की सहायता",
+        "en": "Housing assistance for economically weaker sections",
+        "mr": "गरीब आणि मध्यम वर्गासाठी घर बांधण्यासाठी मदत",
+        "pa": "ਗਰੀਬ ਅਤੇ ਮੱਧ ਵਰਗ ਲਈ ਘਰ ਬਣਾਉਣ ਦੀ ਸਹਾਇਤਾ"
+      },
+      "official_source": "https://pmaymis.gov.in/",
+      "last_verified": "2025-01-01",
+      "data_status": "DEMO_ONLY",
+      "required_fields": ["annual_income", "age"],
+      "eligibility_rules": {
+        "age": {"min": 21, "max": 70},
+        "annual_income": {"max": 600000}
+      },
+      "exclusion_rules": {},
+      "required_documents": ["Aadhaar", "Income Certificate", "Property Documents"],
+      "benefits": {
+        "hi": "₹2.67 लाख तक की सब्सिडी",
+        "en": "Subsidy up to ₹2.67 lakh",
+        "mr": "₹2.67 लाख पर्यंत अनुदान",
+        "pa": "₹2.67 ਲੱਖ ਤੱਕ ਦੀ ਸਬਸਿਡੀ"
+      },
+      "demo_rule": true,
+      "note": "DEMO ONLY - not official eligibility criteria"
+    },
+    {
+      "scheme_id": "AYUSHMAN_DEMO",
+      "name": {
+        "hi": "आयुष्मान भारत",
+        "en": "Ayushman Bharat (PM-JAY)",
+        "mr": "आयुष्मान भारत",
+        "pa": "ਆਯੁਸ਼ਮਾਨ ਭਾਰਤ"
+      },
+      "description": {
+        "hi": "5 लाख रुपये तक का मुफ्त स्वास्थ्य बीमा",
+        "en": "Free health insurance coverage up to ₹5 lakh per family",
+        "mr": "प्रति कुटुंब ₹5 लाख पर्यंत मोफत आरोग्य विमा",
+        "pa": "ਹਰ ਪਰਿਵਾਰ ਨੂੰ ₹5 ਲੱਖ ਤੱਕ ਦਾ ਮੁਫ਼ਤ ਸਿਹਤ ਬੀਮਾ"
+      },
+      "official_source": "https://pmjay.gov.in/",
+      "last_verified": "2025-01-01",
+      "data_status": "DEMO_ONLY",
+      "required_fields": ["annual_income", "social_category"],
+      "eligibility_rules": {
+        "annual_income": {"max": 500000},
+        "social_categories": ["BPL", "SC", "ST", "OBC", "General"]
+      },
+      "exclusion_rules": {},
+      "required_documents": ["Aadhaar", "Ration Card", "Income Certificate"],
+      "benefits": {
+        "hi": "₹5 लाख प्रति परिवार प्रति वर्ष",
+        "en": "₹5 lakh per family per year",
+        "mr": "₹5 लाख प्रति कुटुंब दरवर्षी",
+        "pa": "₹5 ਲੱਖ ਪ੍ਰਤੀ ਪਰਿਵਾਰ ਹਰ ਸਾਲ"
+      },
+      "demo_rule": true,
+      "note": "DEMO ONLY - not official eligibility criteria"
+    },
+    {
+      "scheme_id": "UJJWALA_DEMO",
+      "name": {
+        "hi": "प्रधानमंत्री उज्ज्वला योजना",
+        "en": "PM Ujjwala Yojana",
+        "mr": "प्रधानमंत्री उज्ज्वला योजना",
+        "pa": "ਪ੍ਰਧਾਨ ਮੰਤਰੀ ਉੱਜਵਲਾ ਯੋਜਨਾ"
+      },
+      "description": {
+        "hi": "गरीब महिलाओं को मुफ्त गैस कनेक्शन",
+        "en": "Free LPG connection to women from BPL families",
+        "mr": "गरीब महिलांना मोफत गॅस कनेक्शन",
+        "pa": "ਗਰੀਬ ਔਰਤਾਂ ਨੂੰ ਮੁਫ਼ਤ ਗੈਸ ਕਨੈਕਸ਼ਨ"
+      },
+      "official_source": "https://www.pmuy.gov.in/",
+      "last_verified": "2025-01-01",
+      "data_status": "DEMO_ONLY",
+      "required_fields": ["gender", "annual_income"],
+      "eligibility_rules": {
+        "gender": "female",
+        "annual_income": {"max": 200000}
+      },
+      "exclusion_rules": {},
+      "required_documents": ["Aadhaar", "BPL Certificate", "Address Proof"],
+      "benefits": {
+        "hi": "मुफ्त LPG कनेक्शन + ₹1600 सहायता",
+        "en": "Free LPG connection + ₹1600 assistance",
+        "mr": "मोफत LPG कनेक्शन + ₹1600 मदत",
+        "pa": "ਮੁਫ਼ਤ LPG ਕਨੈਕਸ਼ਨ + ₹1600 ਸਹਾਇਤਾ"
+      },
+      "demo_rule": true,
+      "note": "DEMO ONLY - not official eligibility criteria"
+    }
+  ]
+}

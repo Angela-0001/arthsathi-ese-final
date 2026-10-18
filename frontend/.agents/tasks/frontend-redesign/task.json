@@ -1,0 +1,12 @@
+{
+  "task_id": "task-frontend-redesign",
+  "task_description": "Redesign ArthSathi Next.js 15 PWA frontend with professional UI, keeping all backend APIs, i18n, and voice features unchanged",
+  "status": "pending",
+  "feature_order": [
+    "FEAT-001",
+    "FEAT-002",
+    "FEAT-003",
+    "FEAT-004"
+  ],
+  "blocked_reason": null
+}

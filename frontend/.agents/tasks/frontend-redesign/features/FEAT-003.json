@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Redesign Results, Document, and Connect pages with new UI. Results: better card design, add tabs for Schemes vs Insurance, filters, keep all API calls and event logging. Document: cleaner upload UI, better risk highlighting. Connect: dedicated /connect and /ivr pages with environment-variable-driven contact info.",
+  "status": "pending",
+  "steps": [
+    "Update c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\results\\page.tsx: use Card component for scheme/insurance cards. Improve card design: larger icons, clearer score badges using new color palette (green for high score 70+, amber for medium 40-69, gray for low <40), benefit amount in larger font, 'Why this fits you' (explain_text) in colored info box with ✅ icon, tags as rounded pills with primary/10 background, collapsible details section with score breakdown chart using primary color, Apply/Details/Dismiss buttons using Button component from FEAT-001. Add filter UI: tabs for 'Schemes (N)' and 'Insurance (N)' with icons 🌾 and 🛡️, sticky tab bar. Preserve ALL existing logic: checkConnectivity with HTTP ping (not navigator.onLine), cache in localStorage as as_results_v2, offline banner, API calls to POST /api/schemes/recommend and POST /api/insurance/recommend, event logging to POST /api/schemes/event, empty state with retry. Use new color palette throughout.",
+    "Update c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\document\\page.tsx: use Card and Button components. Redesign upload section: side-by-side 'Take Photo' 📷 and 'Upload from Gallery' 📁 buttons using Button component with large size, 'Tips for Best Results' card. Redesign results section: risk level badge with better styling using new accent color for warnings, summary card with Card component, risk flags as colored alert boxes (red for high/critical using new palette, amber for medium, green for low), Q&A history as chat-style bubbles (user messages in secondary/10 background, assistant in gray/50). Preserve ALL existing logic: file upload to POST /api/documents/upload, polling GET /api/documents/:id, Q&A to POST /api/documents/:id/question, OCR confidence display, LLM model indicator, localStorage lang detection. Use new color palette, improve mobile layout.",
+    "Update c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\channels\\page.tsx: rename to c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\connect\\page.tsx (change URL from /channels to /connect for consistency). Use Card component for each channel (IVR, WhatsApp, Telegram). Each card shows: large icon, title, contact info (phone/username) from environment variables (NEXT_PUBLIC_IVR_NUMBER, NEXT_PUBLIC_WHATSAPP_NUMBER, NEXT_PUBLIC_TELEGRAM_USERNAME with fallbacks to current hardcoded values), description, 'How to use' expandable section, action Button (Copy Number for IVR, Open WhatsApp/Telegram for others). Use new color palette. Add clear note that these are the official ArthSathi contact channels.",
+    "Create NEW c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\ivr\\page.tsx: dedicated IVR page. Show large phone icon 📞, IVR number from process.env.NEXT_PUBLIC_IVR_NUMBER (default: 02248963501) as huge tap-to-call link (<a href='tel:...' className='text-5xl font-bold text-primary'>), 'How the IVR works' section with step-by-step instructions (1. Call number, 2. Choose language 1-6, 3. Answer questions via keypad, 4. Hear recommendations), 'Supported Languages' list (Hindi, Marathi, Tamil, Telugu, Bengali, English), 'Available 24/7 • Free from most numbers' badge. Use Card and Button components, new color palette.",
+    "Update navigation links: ensure Navbar component links to /connect and /ivr, dashboard action cards link correctly, homepage footer links work. Update any hardcoded '/channels' paths to '/connect'."
+  ],
+  "acceptance_criteria": [
+    "Results page redesigned with better cards, tabs for Schemes/Insurance, filters, all using new UI components and color palette - all existing API calls and logic preserved",
+    "Document page redesigned with cleaner upload UI, better risk highlighting using new color palette - all existing OCR and Q&A logic preserved",
+    "Connect page (formerly /channels) redesigned with Card components, environment-driven contact info, better styling",
+    "NEW /ivr page created with dedicated IVR information, tap-to-call link, usage instructions",
+    "All navigation links updated to use /connect instead of /channels",
+    "All pages mobile-responsive, use new color palette, preserve offline functionality"
+  ],
+  "verification": [
+    "With all three processes running (ML engine :8001, backend :3001, frontend :3000), complete onboarding flow and navigate to /results",
+    "On results page verify: tabs for Schemes/Insurance work, cards show improved design with new colors, score badges use green/amber/gray palette, Apply buttons work, event logging fires (check Network tab), offline mode works (stop backend, reload page, see cached results)",
+    "Navigate to /document and verify: upload buttons styled with new components, can upload image, results show with improved risk highlighting, Q&A chat bubbles styled correctly",
+    "Navigate to /connect and verify: URL is /connect (not /channels), three channel cards render with Card component, IVR number copies to clipboard, WhatsApp/Telegram links open correctly, environment variables used (check in code or test by setting NEXT_PUBLIC_IVR_NUMBER in .env.local)",
+    "Navigate to /ivr and verify: shows IVR number as tap-to-call link, instructions render, supported languages listed",
+    "Verify navbar 'Connect' and 'Call Us' links go to /connect and /ivr respectively",
+    "Test all pages on mobile viewport and verify responsive design"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

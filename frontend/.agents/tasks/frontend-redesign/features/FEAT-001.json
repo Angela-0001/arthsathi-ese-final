@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-001",
+  "type": "refactor",
+  "description": "Update design system: Tailwind config with new color palette (saffron-orange #F97316 primary, deep green #16A34A secondary, sky blue #0EA5E9 accent), rebuild shared UI component library (Button, Card, Navbar, MobileNav, Modal, Toast, Loader), update globals.css with improved accessibility and animations. Clear stale .next cache to fix 357.js module error.",
+  "status": "completed",
+  "steps": [
+    "Clear stale Next.js build cache: Remove-Item -Recurse -Force c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\.next\\ to fix the 357.js module not found error reported by user",
+    "Update c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\tailwind.config.js: replace current colors (primary #1B6B3A green, accent #F5A623 amber) with new palette - primary: #F97316 (saffron-orange), secondary: #16A34A (deep green), accent: #0EA5E9 (sky blue), surface: #FAFAFA (off-white), textDark: #1F2937. Keep existing minHeight/minWidth touch targets, fontSize scales, fontFamily (Noto Sans)",
+    "Update c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\styles\\globals.css: update .btn-primary to use new primary color, .btn-secondary to use new secondary color, add .btn-accent variant, ensure all button classes maintain min-h-[48px] WCAG compliance, keep existing voice-recording and skeleton animations",
+    "Create c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\components\\ui\\Button.tsx: reusable Button component with variants (primary, secondary, accent, ghost), sizes (sm, md, lg), loading state, disabled state, icon support, full TypeScript types. Use new color palette from Tailwind config.",
+    "Create c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\components\\ui\\Card.tsx: Card component with shadow variants, border options, padding sizes, hover effects. Used for scheme/insurance cards, feature cards, info boxes.",
+    "Create c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\components\\ui\\Navbar.tsx: desktop sticky navbar with logo (🌱 ArthSathi text), nav links (Home, Eligibility, Documents, Connect, Call Us), LanguageSwitcher component, Login/Signup or User menu with Logout. Uses new primary color for background, white text, hover states.",
+    "Create c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\components\\ui\\MobileNav.tsx: mobile hamburger menu (opens from left), plus optional bottom tab bar with 4-5 main actions (Home, Eligibility, Documents, Profile). Uses new color palette, smooth slide-in animation, backdrop overlay.",
+    "Create c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\components\\ui\\Modal.tsx: accessible modal dialog with backdrop, close button, title/content/footer slots, keyboard trap, ESC to close, focus management. Used for confirmations and info dialogs.",
+    "Create c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\components\\ui\\Toast.tsx: toast notification component with variants (success, error, warning, info), auto-dismiss timer, position (top-right), animation. Manages global toast state via React context or simple event emitter.",
+    "Create c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\components\\ui\\Loader.tsx: loading spinner component with sizes, color variants, optional text label. Used in button loading states and page loaders."
+  ],
+  "acceptance_criteria": [
+    "Tailwind config uses new color palette: primary #F97316, secondary #16A34A, accent #0EA5E9, surface #FAFAFA, textDark #1F2937",
+    "All new UI components (Button, Card, Navbar, MobileNav, Modal, Toast, Loader) created in components/ui/ with proper TypeScript types and accessibility attributes",
+    "globals.css updated with new button styles using new palette, all existing animations preserved",
+    ".next/ cache cleared successfully",
+    "npm run dev starts without 357.js module error",
+    "All components render correctly in browser with new color scheme"
+  ],
+  "verification": [
+    "Run: Remove-Item -Recurse -Force c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\.next\\ and verify it completes",
+    "Run: cd c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend && npm run dev and verify server starts on :3000 without module errors",
+    "Open http://localhost:3000 in browser and verify: page loads, no console errors, new color palette visible if any components use Tailwind primary/secondary/accent classes",
+    "Inspect c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\components\\ui\\ directory and verify all 9 new component files exist (Button, Card, Navbar, MobileNav, Modal, Toast, Loader, plus existing OfflineBanner and VoiceButton)"
+  ],
+  "blocked_reason": null,
+  "findings": "All components created successfully. Build completed without errors. New green color palette (primary: #16A34A) applied throughout. Navigation translations added to i18n files (en.ts, hi.ts). All 9 UI components exist in components/ui/: Button, Card, Navbar, MobileNav, Modal, Toast, Loader, plus existing OfflineBanner and VoiceButton. globals.css updated with new button styles and toast animation. Ready for integration into pages."
+}

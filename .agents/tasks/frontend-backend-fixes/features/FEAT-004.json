@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-004",
+  "type": "fix",
+  "description": "Fix results page 'no results found' bug and improve backend recommendation logging. The results page shows generic 'no results' message for multiple distinct states (no profile, offline, engine down, legitimately no matches). Backend should also log when engine returns empty arrays to help diagnose issues.",
+  "status": "pending",
+  "steps": [
+    "1. In frontend/app/results/page.tsx in loadResults() function (line ~87): Add explicit check: if (!userId) { router.push('/onboarding'); return; } BEFORE any API calls.",
+    "2. After successful API calls (line ~105), check if both arrays are empty: if (s.length === 0 && i.length === 0) { /* set flag */ }. Add new state: const [emptyReason, setEmptyReason] = useState<'loading'|'no-matches'|'offline'|'error'>('loading');",
+    "3. When both arrays empty after successful API call, set: setEmptyReason('no-matches'). When API fails and no cache, set: setEmptyReason('offline'). When cache load fails, set: setEmptyReason('error').",
+    "4. Update EmptyState component (line ~365) to accept reason prop and display different messages: 'no-matches' → 'No matches found. Update your profile for better results.' with link to /onboarding. 'offline' → 'Cannot connect to server. Check your connection.' with retry button. 'error' → 'Something went wrong. Please try again.' with retry button.",
+    "5. In backend/src/routes/schemes.js in POST /api/schemes/recommend (line ~75): After receiving result from engine, add logging: if (!result.schemes || result.schemes.length === 0) { console.log('[Schemes] Engine returned empty schemes array for user', user_id); }",
+    "6. In POST /api/insurance/recommend (line ~185): Add similar logging: if (!result.insurance || result.insurance.length === 0) { console.log('[Insurance] Engine returned empty insurance array for user', user_id); }",
+    "7. In backend/src/routes/schemes.js line ~88: When engine is down and falling back to cache, if cache query returns 0 rows, return: { success: false, error: { code: 'NO_DATA', message: 'No recommendations available. Complete your profile and try again.' } } instead of returning empty array.",
+    "8. Test all scenarios: (a) Complete profile → should see schemes. (b) Disconnect network → should see 'offline' message. (c) Empty profile → should redirect to onboarding. (d) Stop Python engine → should use cache or show appropriate error."
+  ],
+  "acceptance_criteria": [
+    "Visiting /results without completing onboarding immediately redirects to /onboarding",
+    "After completing valid profile, results page shows schemes and insurance",
+    "With network disconnected, results page shows 'Cannot connect to server' message with offline banner",
+    "When engine returns empty arrays (legitimate no matches), page shows 'No matches found. Update your profile' with link to onboarding",
+    "Backend logs show '[Schemes] Engine returned empty schemes array for user <id>' when engine returns no schemes",
+    "Backend logs show '[Insurance] Engine returned empty insurance array for user <id>' when engine returns no insurance"
+  ],
+  "verification": [
+    "Test scenario 1 - No profile: Clear localStorage (arthsathi_user, as_user_id), visit /results → should redirect to /onboarding immediately",
+    "Test scenario 2 - Valid profile: Complete onboarding flow, visit /results → should display schemes and insurance cards (not empty state)",
+    "Test scenario 3 - Offline: Disconnect network (or stop backend), visit /results → should show offline banner and 'Cannot connect' message",
+    "Test scenario 4 - Engine down: Stop Python engine (recommendation_engine.py), make recommendation request → backend should return cached data with 'source: cache', or show appropriate error if no cache",
+    "Backend verification: Start backend with 'node server.js' and watch terminal logs. Trigger recommendation requests and verify logs appear when engine returns empty data"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -2,6 +2,17 @@
  * ArthSathi — Hindi translations (हिंदी)
  */
 const hi: Record<string, string> = {
+  // Navigation
+  'nav.home': 'होम',
+  'nav.eligibility': 'पात्रता',
+  'nav.documents': 'दस्तावेज़',
+  'nav.connect': 'संपर्क',
+  'nav.callUs': 'फ़ोन करें',
+  'nav.login': 'लॉगिन / साइन अप',
+  'nav.profile': 'प्रोफ़ाइल',
+  'nav.mySchemes': 'मेरी योजनाएं',
+  'nav.logout': 'लॉगआउट',
+
   'app.name': 'अर्थसाथी',
   'app.tagline': 'आपका वित्तीय साथी',
   'app.loading': 'लोड हो रहा है...',

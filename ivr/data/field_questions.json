@@ -1,0 +1,297 @@
+{
+  "occupation": {
+    "hi": "आपका व्यवसाय क्या है? जैसे किसान, नौकरी, व्यापार?",
+    "en": "What is your occupation? For example: farmer, job, business?",
+    "mr": "तुमचा व्यवसाय काय आहे? उदाहरणार्थ: शेतकरी, नोकरी, व्यापार?",
+    "pa": "ਤੁਹਾਡਾ ਕਿੱਤਾ ਕੀ ਹੈ? ਉਦਾਹਰਨ: ਕਿਸਾਨ, ਨੌਕਰੀ, ਵਪਾਰ?"
+  },
+  "age": {
+    "hi": "आपकी उम्र क्या है?",
+    "en": "What is your age?",
+    "mr": "तुमचे वय किती आहे?",
+    "pa": "ਤੁਹਾਡੀ ਉਮਰ ਕਿੰਨੀ ਹੈ?"
+  },
+  "state": {
+    "hi": "आप किस राज्य में रहते हैं?",
+    "en": "Which state do you live in?",
+    "mr": "तुम्ही कोणत्या राज्यात राहता?",
+    "pa": "ਤੁਸੀਂ ਕਿਹੜੇ ਰਾਜ ਵਿੱਚ ਰਹਿੰਦੇ ਹੋ?"
+  },
+  "district": {
+    "hi": "आप किस जिले में रहते हैं?",
+    "en": "Which district do you live in?",
+    "mr": "तुम्ही कोणत्या जिल्ह्यात राहता?",
+    "pa": "ਤੁਸੀਂ ਕਿਹੜੇ ਜ਼ਿਲ੍ਹੇ ਵਿੱਚ ਰਹਿੰਦੇ ਹੋ?"
+  },
+  "annual_income": {
+    "hi": "आपकी सालाना आमदनी कितनी है?",
+    "en": "What is your annual income?",
+    "mr": "तुमचे वार्षिक उत्पन्न किती आहे?",
+    "pa": "ਤੁਹਾਡੀ ਸਾਲਾਨਾ ਆਮਦਨ ਕਿੰਨੀ ਹੈ?"
+  },
+  "gender": {
+    "hi": "आप पुरुष हैं या महिला?",
+    "en": "Are you male or female?",
+    "mr": "तुम्ही पुरुष आहात की महिला?",
+    "pa": "ਤੁਸੀਂ ਮਰਦ ਹੋ ਜਾਂ ਔਰਤ?"
+  },
+  "rural_or_urban": {
+    "hi": "आप गांव में रहते हैं या शहर में?",
+    "en": "Do you live in a village or city?",
+    "mr": "तुम्ही गावात राहता की शहरात?",
+    "pa": "ਤੁਸੀਂ ਪਿੰਡ ਵਿੱਚ ਰਹਿੰਦੇ ਹੋ ਜਾਂ ਸ਼ਹਿਰ ਵਿੱਚ?"
+  },
+  "social_category": {
+    "hi": "आप किस सामाजिक श्रेणी में आते हैं? SC, ST, OBC या General?",
+    "en": "Which social category do you belong to? SC, ST, OBC, or General?",
+    "mr": "तुम्ही कोणत्या सामाजिक श्रेणीत येता? SC, ST, OBC किंवा General?",
+    "pa": "ਤੁਸੀਂ ਕਿਹੜੀ ਸਮਾਜਿਕ ਸ਼੍ਰੇਣੀ ਨਾਲ ਸਬੰਧਤ ਹੋ? SC, ST, OBC ਜਾਂ General?"
+  },
+
+  "landholding_status": {
+    "hi": "क्या आपके पास खेती की जमीन है?",
+    "en": "Do you own agricultural land?",
+    "mr": "तुमच्याकडे शेतीची जमीन आहे का?",
+    "pa": "ਕੀ ਤੁਹਾਡੇ ਕੋਲ ਖੇਤੀਬਾੜੀ ਦੀ ਜ਼ਮੀਨ ਹੈ?"
+  },
+  "institutional_landholder_status": {
+    "hi": "क्या आपकी जमीन किसी संस्थागत संस्था के नाम पर है?",
+    "en": "Is the land held by an institutional entity?",
+    "mr": "जमीन एखाद्या संस्थेच्या नावावर आहे का?",
+    "pa": "ਕੀ ਜ਼ਮੀਨ ਕਿਸੇ ਸੰਸਥਾ ਦੇ ਨਾਮ 'ਤੇ ਹੈ?"
+  },
+  "constitutional_post_status": {
+    "hi": "क्या आप किसी संवैधानिक पद पर हैं?",
+    "en": "Do you hold a constitutional post?",
+    "mr": "तुम्ही कोणतेही घटनात्मक पद धारण करता का?",
+    "pa": "ਕੀ ਤੁਸੀਂ ਕਿਸੇ ਸੰਵਿਧਾਨਕ ਅਹੁਦੇ 'ਤੇ ਹੋ?"
+  },
+  "minister_or_legislator_status": {
+    "hi": "क्या आप मंत्री या विधायक/सांसद हैं?",
+    "en": "Are you a minister, legislator, or member of Parliament?",
+    "mr": "तुम्ही मंत्री, आमदार किंवा खासदार आहात का?",
+    "pa": "ਕੀ ਤੁਸੀਂ ਮੰਤਰੀ, ਵਿਧਾਇਕ ਜਾਂ ਸੰਸਦ ਮੈਂਬਰ ਹੋ?"
+  },
+  "government_employee_status": {
+    "hi": "क्या आप सरकारी कर्मचारी हैं?",
+    "en": "Are you a government employee?",
+    "mr": "तुम्ही सरकारी कर्मचारी आहात का?",
+    "pa": "ਕੀ ਤੁਸੀਂ ਸਰਕਾਰੀ ਕਰਮਚਾਰੀ ਹੋ?"
+  },
+  "pension_status": {
+    "hi": "क्या आपको पेंशन मिलती है?",
+    "en": "Do you receive a pension?",
+    "mr": "तुम्हाला पेन्शन मिळते का?",
+    "pa": "ਕੀ ਤੁਹਾਨੂੰ ਪੈਨਸ਼ਨ ਮਿਲਦੀ ਹੈ?"
+  },
+  "income_tax_status": {
+    "hi": "क्या आप आयकर देते हैं?",
+    "en": "Do you pay income tax?",
+    "mr": "तुम्ही आयकर भरता का?",
+    "pa": "ਕੀ ਤੁਸੀਂ ਆਮਦਨ ਕਰ ਭਰਦੇ ਹੋ?"
+  },
+  "professional_practice_status": {
+    "hi": "क्या आप डॉक्टर, वकील, इंजीनियर जैसे पेशेवर व्यवसाय में हैं?",
+    "en": "Do you practice a professional occupation such as medicine or law?",
+    "mr": "तुम्ही डॉक्टर, वकील किंवा इतर व्यावसायिक व्यवसाय करता का?",
+    "pa": "ਕੀ ਤੁਸੀਂ ਡਾਕਟਰ, ਵਕੀਲ ਜਾਂ ਕਿਸੇ ਹੋਰ ਪੇਸ਼ੇਵਰ ਕੰਮ ਵਿੱਚ ਹੋ?"
+  },
+
+  "farmer_status": {
+    "hi": "क्या आप किसान हैं?",
+    "en": "Are you a farmer?",
+    "mr": "तुम्ही शेतकरी आहात का?",
+    "pa": "ਕੀ ਤੁਸੀਂ ਕਿਸਾਨ ਹੋ?"
+  },
+  "crop": {
+    "hi": "आप कौन सी फसल उगाते हैं?",
+    "en": "Which crop do you grow?",
+    "mr": "तुम्ही कोणते पीक घेता?",
+    "pa": "ਤੁਸੀਂ ਕਿਹੜੀ ਫ਼ਸਲ ਉਗਾਉਂਦੇ ਹੋ?"
+  },
+  "notified_area": {
+    "hi": "क्या आपका क्षेत्र इस फसल के लिए अधिसूचित है?",
+    "en": "Is your area notified for this crop?",
+    "mr": "तुमचा परिसर या पिकासाठी अधिसूचित आहे का?",
+    "pa": "ਕੀ ਤੁਹਾਡਾ ਇਲਾਕਾ ਇਸ ਫ਼ਸਲ ਲਈ ਨੋਟੀਫਾਈਡ ਹੈ?"
+  },
+  "season": {
+    "hi": "आप किस फसल मौसम की जानकारी चाहते हैं?",
+    "en": "Which crop season are you asking about?",
+    "mr": "तुम्हाला कोणत्या पीक हंगामाची माहिती हवी आहे?",
+    "pa": "ਤੁਸੀਂ ਕਿਸ ਫ਼ਸਲੀ ਮੌਸਮ ਬਾਰੇ ਜਾਣਕਾਰੀ ਚਾਹੁੰਦੇ ਹੋ?"
+  },
+
+  "family_eligibility_status": {
+    "hi": "क्या आपका परिवार आयुष्मान भारत योजना की पात्र सूची में है?",
+    "en": "Is your family listed as eligible for Ayushman Bharat PM-JAY?",
+    "mr": "तुमचे कुटुंब आयुष्मान भारत योजनेसाठी पात्र यादीत आहे का?",
+    "pa": "ਕੀ ਤੁਹਾਡਾ ਪਰਿਵਾਰ ਆਯੁਸ਼ਮਾਨ ਭਾਰਤ ਲਈ ਯੋਗ ਸੂਚੀ ਵਿੱਚ ਹੈ?"
+  },
+
+  "class": {
+    "hi": "आप किस कक्षा में पढ़ते हैं?",
+    "en": "Which class are you studying in?",
+    "mr": "तुम्ही कोणत्या वर्गात शिकता?",
+    "pa": "ਤੁਸੀਂ ਕਿਹੜੀ ਜਮਾਤ ਵਿੱਚ ਪੜ੍ਹਦੇ ਹੋ?"
+  },
+  "school_type": {
+    "hi": "आप किस प्रकार के स्कूल में पढ़ते हैं? सरकारी या निजी?",
+    "en": "What type of school do you attend? Government or private?",
+    "mr": "तुम्ही कोणत्या प्रकारच्या शाळेत शिकता? सरकारी की खासगी?",
+    "pa": "ਤੁਸੀਂ ਕਿਸ ਕਿਸਮ ਦੇ ਸਕੂਲ ਵਿੱਚ ਪੜ੍ਹਦੇ ਹੋ? ਸਰਕਾਰੀ ਜਾਂ ਨਿੱਜੀ?"
+  },
+
+  "class_12_percentile": {
+    "hi": "क्या आपने 12वीं में अपने बोर्ड/स्ट्रीम के सफल विद्यार्थियों में 80वें परसेंटाइल से ऊपर स्थान प्राप्त किया था?",
+    "en": "Were you above the 80th percentile among successful Class 12 students in your board and stream?",
+    "mr": "तुम्ही बारावीमध्ये तुमच्या बोर्ड आणि शाखेतील यशस्वी विद्यार्थ्यांच्या 80 व्या पर्सेंटाइलपेक्षा वर होता का?",
+    "pa": "ਕੀ ਤੁਸੀਂ 12ਵੀਂ ਵਿੱਚ ਆਪਣੇ ਬੋਰਡ ਅਤੇ ਸਟ੍ਰੀਮ ਦੇ ਸਫਲ ਵਿਦਿਆਰਥੀਆਂ ਵਿੱਚ 80ਵੇਂ ਪਰਸੈਂਟਾਈਲ ਤੋਂ ਉੱਪਰ ਸੀ?"
+  },
+  "regular_course_status": {
+    "hi": "क्या आप नियमित कोर्स में पढ़ रहे हैं?",
+    "en": "Are you enrolled in a regular course?",
+    "mr": "तुम्ही नियमित अभ्यासक्रमात शिकत आहात का?",
+    "pa": "ਕੀ ਤੁਸੀਂ ਰੈਗੂਲਰ ਕੋਰਸ ਵਿੱਚ ਪੜ੍ਹ ਰਹੇ ਹੋ?"
+  },
+  "other_scholarship_status": {
+    "hi": "क्या आपको कोई दूसरी छात्रवृत्ति मिल रही है?",
+    "en": "Are you receiving any other scholarship?",
+    "mr": "तुम्हाला दुसरी कोणतीही शिष्यवृत्ती मिळत आहे का?",
+    "pa": "ਕੀ ਤੁਹਾਨੂੰ ਕੋਈ ਹੋਰ ਸਕਾਲਰਸ਼ਿਪ ਮਿਲ ਰਹੀ ਹੈ?"
+  },
+  "course_type": {
+    "hi": "आप किस प्रकार का कोर्स कर रहे हैं?",
+    "en": "What type of course are you pursuing?",
+    "mr": "तुम्ही कोणत्या प्रकारचा अभ्यासक्रम करत आहात?",
+    "pa": "ਤੁਸੀਂ ਕਿਸ ਕਿਸਮ ਦਾ ਕੋਰਸ ਕਰ ਰਹੇ ਹੋ?"
+  },
+
+  "house_status": {
+    "hi": "आपके घर की स्थिति क्या है? पक्का, कच्चा या आपके पास घर नहीं है?",
+    "en": "What is the condition of your house? Pucca, kutcha, or no house?",
+    "mr": "तुमच्या घराची स्थिती काय आहे? पक्के, कच्चे किंवा घर नाही?",
+    "pa": "ਤੁਹਾਡੇ ਘਰ ਦੀ ਹਾਲਤ ਕੀ ਹੈ? ਪੱਕਾ, ਕੱਚਾ ਜਾਂ ਘਰ ਨਹੀਂ ਹੈ?"
+  },
+  "number_of_rooms": {
+    "hi": "आपके घर में कितने कमरे हैं?",
+    "en": "How many rooms are in your house?",
+    "mr": "तुमच्या घरात किती खोल्या आहेत?",
+    "pa": "ਤੁਹਾਡੇ ਘਰ ਵਿੱਚ ਕਿੰਨੇ ਕਮਰੇ ਹਨ?"
+  },
+  "vehicle_status": {
+    "hi": "क्या आपके परिवार के पास कोई मोटर वाहन है?",
+    "en": "Does your household own a motor vehicle?",
+    "mr": "तुमच्या कुटुंबाकडे मोटार वाहन आहे का?",
+    "pa": "ਕੀ ਤੁਹਾਡੇ ਪਰਿਵਾਰ ਕੋਲ ਕੋਈ ਮੋਟਰ ਵਾਹਨ ਹੈ?"
+  },
+  "monthly_income": {
+    "hi": "आपकी मासिक आमदनी कितनी है?",
+    "en": "What is your monthly income?",
+    "mr": "तुमचे मासिक उत्पन्न किती आहे?",
+    "pa": "ਤੁਹਾਡੀ ਮਹੀਨਾਵਾਰ ਆਮਦਨ ਕਿੰਨੀ ਹੈ?"
+  },
+  "tax_status": {
+    "hi": "क्या आपके परिवार में कोई आयकर देता है?",
+    "en": "Does anyone in your household pay income tax?",
+    "mr": "तुमच्या कुटुंबातील कोणी आयकर भरतो का?",
+    "pa": "ਕੀ ਤੁਹਾਡੇ ਪਰਿਵਾਰ ਵਿੱਚ ਕੋਈ ਆਮਦਨ ਕਰ ਭਰਦਾ ਹੈ?"
+  },
+  "land_status": {
+    "hi": "क्या आपके पास जमीन है? अगर हाँ, तो कितनी?",
+    "en": "Do you own land? If yes, how much?",
+    "mr": "तुमच्याकडे जमीन आहे का? असल्यास किती?",
+    "pa": "ਕੀ ਤੁਹਾਡੇ ਕੋਲ ਜ਼ਮੀਨ ਹੈ? ਜੇ ਹਾਂ, ਤਾਂ ਕਿੰਨੀ?"
+  },
+
+  "pucca_house_status": {
+    "hi": "क्या आपके पास भारत में कहीं पक्का घर है?",
+    "en": "Do you own a pucca house anywhere in India?",
+    "mr": "तुमच्याकडे भारतात कुठेही पक्के घर आहे का?",
+    "pa": "ਕੀ ਤੁਹਾਡੇ ਕੋਲ ਭਾਰਤ ਵਿੱਚ ਕਿਤੇ ਵੀ ਪੱਕਾ ਘਰ ਹੈ?"
+  },
+  "previous_housing_benefit": {
+    "hi": "क्या आपको पिछले 20 वर्षों में किसी सरकारी आवास योजना का लाभ मिला है?",
+    "en": "Have you received a government housing benefit in the last 20 years?",
+    "mr": "गेल्या 20 वर्षांत तुम्हाला सरकारी गृहनिर्माण योजनेचा लाभ मिळाला आहे का?",
+    "pa": "ਕੀ ਤੁਹਾਨੂੰ ਪਿਛਲੇ 20 ਸਾਲਾਂ ਵਿੱਚ ਕਿਸੇ ਸਰਕਾਰੀ ਹਾਊਸਿੰਗ ਯੋਜਨਾ ਦਾ ਲਾਭ ਮਿਲਿਆ ਹੈ?"
+  },
+
+  "existing_lpg_connection": {
+    "hi": "क्या आपके परिवार के नाम पहले से LPG कनेक्शन है?",
+    "en": "Does your household already have an LPG connection?",
+    "mr": "तुमच्या कुटुंबाच्या नावावर आधीपासून LPG कनेक्शन आहे का?",
+    "pa": "ਕੀ ਤੁਹਾਡੇ ਪਰਿਵਾਰ ਦੇ ਨਾਮ ਪਹਿਲਾਂ ਹੀ LPG ਕਨੈਕਸ਼ਨ ਹੈ?"
+  },
+  "poor_household_status": {
+    "hi": "क्या आपका परिवार सरकारी मानदंड के अनुसार गरीब परिवार की श्रेणी में आता है?",
+    "en": "Does your household qualify as a poor household under the applicable criteria?",
+    "mr": "लागू निकषांनुसार तुमचे कुटुंब गरीब कुटुंबाच्या श्रेणीत येते का?",
+    "pa": "ਕੀ ਲਾਗੂ ਮਾਪਦੰਡਾਂ ਅਨੁਸਾਰ ਤੁਹਾਡਾ ਪਰਿਵਾਰ ਗਰੀਬ ਪਰਿਵਾਰ ਦੀ ਸ਼੍ਰੇਣੀ ਵਿੱਚ ਆਉਂਦਾ ਹੈ?"
+  },
+
+  "girl_age": {
+    "hi": "लड़की की उम्र कितनी है?",
+    "en": "What is the girl's age?",
+    "mr": "मुलीचे वय किती आहे?",
+    "pa": "ਲੜਕੀ ਦੀ ਉਮਰ ਕਿੰਨੀ ਹੈ?"
+  },
+  "guardian_status": {
+    "hi": "क्या आप बच्ची के अभिभावक हैं?",
+    "en": "Are you the girl's guardian?",
+    "mr": "तुम्ही मुलीचे पालक आहात का?",
+    "pa": "ਕੀ ਤੁਸੀਂ ਲੜਕੀ ਦੇ ਸਰਪ੍ਰਸਤ ਹੋ?"
+  },
+
+  "prior_skill_experience": {
+    "hi": "क्या आपके पास किसी काम या कौशल का पहले से अनुभव है?",
+    "en": "Do you have prior work or skill experience?",
+    "mr": "तुमच्याकडे आधीच्या कामाचा किंवा कौशल्याचा अनुभव आहे का?",
+    "pa": "ਕੀ ਤੁਹਾਡੇ ਕੋਲ ਪਹਿਲਾਂ ਦੇ ਕੰਮ ਜਾਂ ਹੁਨਰ ਦਾ ਤਜਰਬਾ ਹੈ?"
+  },
+  "aadhaar_status": {
+    "hi": "क्या आपके पास आधार कार्ड है?",
+    "en": "Do you have an Aadhaar card?",
+    "mr": "तुमच्याकडे आधार कार्ड आहे का?",
+    "pa": "ਕੀ ਤੁਹਾਡੇ ਕੋਲ ਆਧਾਰ ਕਾਰਡ ਹੈ?"
+  },
+
+  "need_category": {
+    "hi": "आपको किस चीज़ की जरूरत है? जैसे घर, स्वास्थ्य, रोजगार, शिक्षा आदि।",
+    "en": "What do you need? For example: housing, health, employment, education, etc.",
+    "mr": "तुम्हाला कशाची गरज आहे? उदाहरणार्थ: घर, आरोग्य, रोजगार, शिक्षण इत्यादी.",
+    "pa": "ਤੁਹਾਨੂੰ ਕਿਸ ਚੀਜ਼ ਦੀ ਲੋੜ ਹੈ? ਉਦਾਹਰਨ: ਘਰ, ਸਿਹਤ, ਰੁਜ਼ਗਾਰ, ਸਿੱਖਿਆ ਆਦਿ।"
+  },
+
+  "insurance_type": {
+    "hi": "आपको किस प्रकार का बीमा चाहिए? Health, life, vehicle, accident या other?",
+    "en": "What type of insurance do you need? Health, life, vehicle, accident, or other?",
+    "mr": "तुम्हाला कोणत्या प्रकारचा विमा हवा आहे? health, life, vehicle, accident किंवा other?",
+    "pa": "ਤੁਹਾਨੂੰ ਕਿਸ ਕਿਸਮ ਦਾ ਬੀਮਾ ਚਾਹੀਦਾ ਹੈ? health, life, vehicle, accident ਜਾਂ other?"
+  },
+  "family_members": {
+    "hi": "कितने लोगों को cover करना है?",
+    "en": "How many people do you want to cover?",
+    "mr": "किती लोकांना cover करायचे आहे?",
+    "pa": "ਕਿੰਨੇ ਲੋਕਾਂ ਨੂੰ cover ਕਰਨਾ ਹੈ?"
+  },
+  "vehicle_type": {
+    "hi": "आपकी गाड़ी कौन सी है? Car, bike, truck या other?",
+    "en": "What is your vehicle? Car, bike, truck, or other?",
+    "mr": "तुमचे वाहन कोणते आहे? car, bike, truck किंवा other?",
+    "pa": "ਤੁਹਾਡੀ ਗੱਡੀ ਕਿਹੜੀ ਹੈ? car, bike, truck ਜਾਂ other?"
+  },
+
+  "document_type": {
+    "hi": "यह किस प्रकार का document है? जैसे Aadhaar, PAN, voter ID आदि।",
+    "en": "What type of document is this? For example: Aadhaar, PAN, voter ID, etc.",
+    "mr": "हा कोणत्या प्रकारचा document आहे? उदाहरणार्थ: Aadhaar, PAN, voter ID इत्यादी.",
+    "pa": "ਇਹ ਕਿਸ ਕਿਸਮ ਦਾ document ਹੈ? ਉਦਾਹਰਨ: Aadhaar, PAN, voter ID ਆਦਿ।"
+  },
+  "user_question": {
+    "hi": "आपका इस document के बारे में क्या सवाल है?",
+    "en": "What is your question about this document?",
+    "mr": "या document बद्दल तुमचा प्रश्न काय आहे?",
+    "pa": "ਇਸ document ਬਾਰੇ ਤੁਹਾਡਾ ਸਵਾਲ ਕੀ ਹੈ?"
+  }
+}

@@ -2,12 +2,16 @@ import { Bot } from "grammy";
 import axios from "axios";
 import FormData from "form-data";
 import { sendToBackend } from "./gateway.js";
+import { translate, detectLanguage } from "./translate.js";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001";
 
 const WEBAPP_URL = process.env.WEBAPP_URL || "http://localhost:3000";
 
-const WELCOME = `🙏 नमस्ते! ArthSathi में आपका स्वागत है।\n\nHello! I'm ArthSathi. Type:\n1️⃣ *1* — Government Schemes | सरकारी योजनाएँ\n2️⃣ *2* — Insurance Policies | बीमा योजनाएँ\n3️⃣ *3* — Financial Roadmap | वित्तीय रोडमैप\n4️⃣ *4* — Analyze a Document | दस्तावेज़ जाँच\n\n📎 To get personalised results, type:\n*/link <your phone number>*\nExample: /link 9876543210\n\nOr send a photo/PDF of any document to check for risky clauses.\n\n🌐 Web app: ${WEBAPP_URL}`;
+async function getWelcomeMessage(lang = 'hi') {
+  const msg = `🙏 नमस्ते! ArthSathi में आपका स्वागत है।\n\nHello! I'm ArthSathi. Type:\n1️⃣ *1* — Government Schemes | सरकारी योजनाएँ\n2️⃣ *2* — Insurance Policies | बीमा योजनाएँ\n3️⃣ *3* — Financial Roadmap | वित्तीय रोडमैप\n4️⃣ *4* — Analyze a Document | दस्तावेज़ जाँच\n\n📎 To get personalised results, type:\n*/link <your phone number>*\nExample: /link 9876543210\n\nOr send a photo/PDF of any document to check for risky clauses.\n\n🌐 Web app: ${WEBAPP_URL}`;
+  return msg;
+}
 
 export function startTelegramBot() {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -17,6 +21,9 @@ export function startTelegramBot() {
   }
 
   const bot = new Bot(token);
+
+  // Store user language preference
+  const userLanguages = new Map();
 
   // /start — welcome message, auto-link if deep link contains phone
   bot.command("start", async (ctx) => {
@@ -35,12 +42,12 @@ export function startTelegramBot() {
             { parse_mode: "Markdown" }
           );
         } catch (err) {
-          // Fall through to welcome message if link fails
           console.log("[Telegram] Auto-link failed:", err.response?.data?.detail);
         }
       }
     }
-    ctx.reply(WELCOME, { parse_mode: "Markdown" });
+    const welcome = await getWelcomeMessage();
+    ctx.reply(welcome, { parse_mode: "Markdown" });
   });
 
   // /link — link Telegram account to web app profile
@@ -174,9 +181,9 @@ export function startTelegramBot() {
 
       const data = resp.data;
       const flags = data.risk_flags || [];
-      const high = flags.filter(f => f.risk_level === "high").length;
-      const medium = flags.filter(f => f.risk_level === "medium").length;
-      const low = flags.filter(f => f.risk_level === "low").length;
+      const high = flags.filter(f => (f.severity || f.risk_level) === "high").length;
+      const medium = flags.filter(f => (f.severity || f.risk_level) === "medium").length;
+      const low = flags.filter(f => (f.severity || f.risk_level) === "low").length;
 
       let reply = `📋 *Analysis Summary*\n${data.summary}\n`;
       reply += `\n🔴 High: ${high}  🟡 Medium: ${medium}  🔵 Low: ${low}\n`;
@@ -184,8 +191,9 @@ export function startTelegramBot() {
       if (flags.length > 0) {
         reply += `\n*Detected Clauses:*\n`;
         flags.slice(0, 6).forEach(f => {
-          const emoji = f.risk_level === "high" ? "🔴" : f.risk_level === "medium" ? "🟡" : "🔵";
-          reply += `\n${emoji} *${f.risk_level.toUpperCase()}*\n_${f.clause_text}_\n${f.explanation}\n`;
+          const level = f.severity || f.risk_level || 'medium';
+          const emoji = level === "high" ? "🔴" : level === "medium" ? "🟡" : "🔵";
+          reply += `\n${emoji} *${level.toUpperCase()}*\n${f.explanation || f.context || ''}\n`;
         });
       } else {
         reply += "\n✅ No risky clauses detected.";
@@ -202,42 +210,47 @@ export function startTelegramBot() {
   // Plain text — number shortcuts + general
   bot.on("message:text", async (ctx) => {
     const text = ctx.message.text.trim();
+    const userLang = userLanguages.get(ctx.from.id) || detectLanguage(text);
 
     if (text === "1") {
-      await ctx.reply("⏳ Fetching eligible government schemes...");
+      const loadingMsg = await translate("Fetching eligible government schemes...", userLang);
+      await ctx.reply(`⏳ ${loadingMsg}`);
       const result = await sendToBackend({
         user_id: String(ctx.from.id),
         channel: "telegram",
         intent: "scheme_match",
-        detected_language: "hi",
+        detected_language: userLang,
       });
       return ctx.reply(result.text_response || "No schemes found. Complete your profile on the web app first.");
     }
 
     if (text === "2") {
-      await ctx.reply("⏳ Fetching insurance recommendations...");
+      const loadingMsg = await translate("Fetching insurance recommendations...", userLang);
+      await ctx.reply(`⏳ ${loadingMsg}`);
       const result = await sendToBackend({
         user_id: String(ctx.from.id),
         channel: "telegram",
         intent: "insurance_recommend",
-        detected_language: "hi",
+        detected_language: userLang,
       });
       return ctx.reply(result.text_response || `🛡️ Visit the web app for insurance recommendations: ${WEBAPP_URL}/insurance`);
     }
 
     if (text === "3") {
-      await ctx.reply("⏳ Building your financial roadmap...");
+      const loadingMsg = await translate("Building your financial roadmap...", userLang);
+      await ctx.reply(`⏳ ${loadingMsg}`);
       const result = await sendToBackend({
         user_id: String(ctx.from.id),
         channel: "telegram",
         intent: "financial_roadmap",
-        detected_language: "hi",
+        detected_language: userLang,
       });
       return ctx.reply(result.text_response || "Could not generate roadmap. Please complete your profile first.");
     }
 
     if (text === "4") {
-      return ctx.reply("📸 Please send a photo or PDF of the document you want to analyze.\nकृपया अपने दस्तावेज़ की फ़ोटो भेजें।");
+      const msg = await translate("Please send a photo or PDF of the document you want to analyze.", userLang);
+      return ctx.reply(`📸 ${msg}\nकृपया अपने दस्तावेज़ की फ़ोटो भेजें।`);
     }
 
     // General message
@@ -245,9 +258,10 @@ export function startTelegramBot() {
       user_id: String(ctx.from.id),
       channel: "telegram",
       raw_text: text,
-      detected_language: "hi",
+      detected_language: userLang,
     });
-    await ctx.reply(result.text_response || WELCOME, { parse_mode: "Markdown" });
+    const welcome = await getWelcomeMessage(userLang);
+    await ctx.reply(result.text_response || welcome, { parse_mode: "Markdown" });
   });
 
   bot.catch((err) => console.error("[Telegram] Error:", err));

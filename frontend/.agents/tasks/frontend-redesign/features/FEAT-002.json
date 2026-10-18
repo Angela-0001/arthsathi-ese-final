@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Redesign core pages (Homepage, Auth, Dashboard) with new UI components and navigation. Homepage: hero section, how-it-works, feature highlights, IVR/WhatsApp/Telegram info, footer. Auth: clean login/signup with phone or email, preserve existing POST /api/users flow. Dashboard: NEW protected route at /dashboard with welcome message and action cards for Eligibility/Document/Connect/Call/Results.",
+  "status": "pending",
+  "steps": [
+    "Update c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\layout.tsx: import and include new Navbar and MobileNav components (conditionally show based on route - hide on auth pages), keep existing LanguageInitializer and OfflineBanner, preserve PWA metadata and service worker registration, ensure Noto Sans font remains",
+    "Redesign c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\page.tsx (Homepage): use new Button and Card components from FEAT-001. Structure: (1) Hero section with 🌱 icon, 'ArthSathi' heading, tagline from t('app.tagline'), large CTA button 'Check My Eligibility' → /auth, (2) How It Works section with 3 numbered steps (Answer questions, See schemes, Apply) using Card components with icons, (3) Feature highlights grid with 4 cards (Government Schemes 🌾, Insurance Plans 🛡️, Document Checker 📄, Voice Support 🎤), (4) Connect section with IVR phone number from process.env.NEXT_PUBLIC_IVR_NUMBER (fallback: 02248963501), WhatsApp link using process.env.NEXT_PUBLIC_WHATSAPP_NUMBER, Telegram link using process.env.NEXT_PUBLIC_TELEGRAM_USERNAME, (5) Footer with IVR number, MIT license, Made for rural India. Preserve existing language switcher. Use new color palette throughout.",
+    "Redesign c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\auth\\page.tsx: use new Button and Card components. Keep existing login/register tabs, phone/email toggle, POST /api/users with {phone_number, full_name, state, district, preferred_language, interaction_mode} body (preserve exact API contract). Store user.id in localStorage as 'as_user_id' (not 'arthsathi_user' - fix inconsistency found in existing code which uses both). After registration, redirect to /dashboard (not /onboarding directly). After login, redirect to /dashboard. Use new primary color for background gradient, Card for form container, Button for submit, clear validation error styling.",
+    "Create NEW c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\dashboard\\page.tsx: protected route (redirect to /auth if no as_user_id in localStorage). Layout: (1) Welcome message with user's name from localStorage profile if available, (2) Grid of 6 large action cards using Card component: 'Check My Eligibility' 🎯 → /onboarding, 'My Recommended Schemes' 🌾 → /results, 'Document Checker' 📄 → /document, 'Connect on WhatsApp' 💬 → external WhatsApp link, 'Connect on Telegram' 📱 → external Telegram link, 'Call Us (IVR)' 📞 → shows modal with IVR number and tap-to-call. Each card has icon, title, description, and Button. Use new color palette, mobile-first responsive grid (1 col mobile, 2 cols tablet, 3 cols desktop).",
+    "Update c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\app\\onboarding\\page.tsx: minimal changes - add 'use client' if missing, ensure redirect to /auth if no as_user_id, update button styles to use new Button component from FEAT-001 (or keep inline classes but with new color palette via Tailwind primary/secondary), preserve ALL existing logic (adaptive questions, voice recording, localStorage persistence, step navigation, API calls to POST /api/users and POST /api/users/:id/profile). On submit success, redirect to /results (keep existing behavior).",
+    "Add environment variable examples to c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\.env.example (create file): NEXT_PUBLIC_API_URL=http://localhost:3001, NEXT_PUBLIC_IVR_NUMBER=02248963501, NEXT_PUBLIC_WHATSAPP_NUMBER=+14155238886, NEXT_PUBLIC_TELEGRAM_USERNAME=arthsathi_demo_bot. Document that user must create .env.local with these values."
+  ],
+  "acceptance_criteria": [
+    "Homepage redesigned with hero, how-it-works, features, connect info, footer - all using new UI components and color palette",
+    "Auth page redesigned with cleaner UI, preserves exact API contract (POST /api/users), stores as_user_id in localStorage, redirects to /dashboard after success",
+    "NEW /dashboard route created, protected (redirects to /auth if not logged in), shows 6 action cards with navigation to all major features",
+    "Navbar and MobileNav integrated in layout.tsx, visible on all pages except /auth",
+    "Onboarding page updated to use new color palette, all existing functionality preserved",
+    "All pages are mobile-responsive, use new color palette, no console errors"
+  ],
+  "verification": [
+    "With backend running on :3001, run: cd c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend && npm run dev",
+    "Open http://localhost:3000 and verify: homepage shows hero, how-it-works, features, connect section, footer - all styled with new colors",
+    "Click language switcher and verify it changes language throughout the page",
+    "Navigate to /auth and verify: clean login/signup UI, can toggle phone/email, form validation works",
+    "Complete auth flow and verify: redirects to /dashboard, dashboard shows 6 action cards, clicking 'Check My Eligibility' goes to /onboarding",
+    "Navigate to /onboarding and verify: questionnaire still works, voice button works, can complete profile and get redirected to /results",
+    "Verify navbar appears on dashboard and homepage, disappears on /auth",
+    "Test on mobile viewport (DevTools) and verify responsive layout, hamburger menu, bottom tab bar (if implemented)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

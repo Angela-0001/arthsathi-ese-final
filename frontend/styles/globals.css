@@ -42,10 +42,17 @@
   }
 
   .btn-secondary {
-    @apply w-full py-4 px-6 bg-white text-primary text-xl font-semibold
-           rounded-2xl min-h-[56px] border-2 border-primary
-           flex items-center justify-center gap-3
-           active:bg-surface-alt transition-colors duration-150;
+    @apply w-full py-4 px-6 bg-secondary text-white text-xl font-semibold
+           rounded-2xl min-h-[56px] flex items-center justify-center gap-3
+           active:bg-secondary-dark transition-colors duration-150
+           focus-visible:ring-4 focus-visible:ring-accent;
+  }
+
+  .btn-accent {
+    @apply w-full py-4 px-6 bg-accent text-white text-xl font-semibold
+           rounded-2xl min-h-[56px] flex items-center justify-center gap-3
+           active:bg-accent-dark transition-colors duration-150
+           focus-visible:ring-4 focus-visible:ring-primary;
   }
 
   /* Card used for scheme/insurance results */
@@ -109,6 +116,22 @@
   background-size: 800px 100%;
   animation: skeleton-shimmer 1.5s infinite linear;
   @apply rounded-xl;
+}
+
+/* Toast slide-in animation */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
 }
 
 /* Safe area insets for notched phones */

@@ -129,10 +129,12 @@ router.post('/recommend', async (req, res, next) => {
     });
 
   } catch (err) {
-    // If engine call fails, return cached
-    console.error('[Schemes] Engine error, falling back to cache:', err.message);
+    // If engine call fails, try cache first, then fallback to top schemes
+    console.error('[Schemes] Engine error, falling back:', err.message);
     try {
-      const { user_id } = req.body;
+      const { user_id, limit = 10 } = req.body;
+      
+      // Try cached matches first
       const cached = await query(
         `SELECT usm.scheme_id as id, usm.score, s.name, s.description, s.category,
                 s.benefit_type, s.benefit_amount_min, s.benefit_amount_max,
@@ -141,11 +143,39 @@ router.post('/recommend', async (req, res, next) => {
          FROM user_scheme_matches usm
          JOIN schemes s ON s.id = usm.scheme_id
          WHERE usm.user_id = $1
-         ORDER BY usm.score DESC LIMIT 10`,
-        [user_id]
+         ORDER BY usm.score DESC LIMIT $2`,
+        [user_id, limit]
       );
-      res.json({ success: true, source: 'cache', offline: true, data: cached.rows });
+      
+      if (cached.rows.length > 0) {
+        return res.json({ success: true, source: 'cache', offline: true, data: cached.rows });
+      }
+      
+      // No cache, return top popular schemes as fallback
+      console.log('[Schemes] No cache, returning popular schemes');
+      const popular = await query(
+        `SELECT id, source_id, name, description, category, tags, benefit_type,
+                benefit_amount_min, benefit_amount_max, application_url, ministry, level,
+                0.5 as score, 'No profile data yet - showing popular schemes' as explain_text,
+                'unknown' as eligibility_status
+         FROM schemes
+         WHERE is_active = TRUE
+         ORDER BY 
+           CASE WHEN level = 'central' THEN 0 ELSE 1 END,
+           benefit_amount_max DESC NULLS LAST
+         LIMIT $1`,
+        [limit]
+      );
+      
+      res.json({ 
+        success: true, 
+        source: 'fallback', 
+        offline: true, 
+        data: popular.rows,
+        message: 'Recommendation engine unavailable. Showing popular schemes.'
+      });
     } catch (e2) {
+      console.error('[Schemes] Fallback error:', e2.message);
       next(err);
     }
   }
@@ -268,7 +298,53 @@ insuranceRouter.post('/recommend', async (req, res, next) => {
     });
 
   } catch (err) {
-    next(err);
+    // If engine call fails, try cache first, then fallback to all insurance
+    console.error('[Insurance] Engine error, falling back:', err.message);
+    try {
+      const { user_id, limit = 5 } = req.body;
+      
+      // Try cached matches first
+      const cached = await query(
+        `SELECT uim.policy_id as id, uim.score, p.name, p.description, 
+                p.annual_premium, p.coverage_amount, p.coverage_type,
+                p.application_url, p.source_id,
+                uim.explain_text, uim.eligibility_status
+         FROM user_insurance_matches uim
+         JOIN insurance_policies p ON p.id = uim.policy_id
+         WHERE uim.user_id = $1
+         ORDER BY uim.score DESC LIMIT $2`,
+        [user_id, limit]
+      );
+      
+      if (cached.rows.length > 0) {
+        return res.json({ success: true, source: 'cache', offline: true, data: cached.rows });
+      }
+      
+      // No cache, return all insurance policies
+      console.log('[Insurance] No cache, returning all policies');
+      const allPolicies = await query(
+        `SELECT id, source_id, name, description, category, tags,
+                annual_premium, coverage_amount, coverage_type, application_url,
+                0.5 as score, 'Showing all available insurance policies' as explain_text,
+                'unknown' as eligibility_status
+         FROM insurance_policies
+         WHERE is_active = TRUE
+         ORDER BY annual_premium ASC NULLS FIRST
+         LIMIT $1`,
+        [limit]
+      );
+      
+      res.json({ 
+        success: true, 
+        source: 'fallback', 
+        offline: true, 
+        data: allPolicies.rows,
+        message: 'Recommendation engine unavailable. Showing all insurance policies.'
+      });
+    } catch (e2) {
+      console.error('[Insurance] Fallback error:', e2.message);
+      next(err);
+    }
   }
 });
 

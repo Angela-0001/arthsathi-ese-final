@@ -1,0 +1,7 @@
+{
+  "task_id": "task-frontend-backend-fixes",
+  "task_description": "Fix frontend layout issues, theme inconsistencies, i18n imports, and backend recommendation empty state handling. Exclude IVR components.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

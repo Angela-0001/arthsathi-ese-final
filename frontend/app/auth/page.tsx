@@ -77,7 +77,8 @@ export default function AuthPage() {
       const responseData = await res.json();
 
       if (!res.ok) {
-        setError(responseData?.error || responseData?.message || 'Registration failed. Please try again.');
+        const errMsg = responseData?.error?.message || responseData?.message || responseData?.error || 'Registration failed. Please try again.';
+        setError(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
         return;
       }
 
@@ -122,7 +123,8 @@ export default function AuthPage() {
       const responseData = await res.json();
 
       if (!res.ok) {
-        setError(responseData?.error || responseData?.message || 'Login failed. Please try again.');
+        const errMsg = responseData?.error?.message || responseData?.message || responseData?.error || 'Login failed. Please try again.';
+        setError(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
         return;
       }
 

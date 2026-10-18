@@ -3,6 +3,17 @@
  * This is the canonical translation file. All other languages mirror these keys.
  */
 const en: Record<string, string> = {
+  // Navigation
+  'nav.home': 'Home',
+  'nav.eligibility': 'Eligibility',
+  'nav.documents': 'Documents',
+  'nav.connect': 'Connect',
+  'nav.callUs': 'Call Us',
+  'nav.login': 'Login / Sign Up',
+  'nav.profile': 'Profile',
+  'nav.mySchemes': 'My Schemes',
+  'nav.logout': 'Logout',
+
   // App
   'app.name': 'ArthSathi',
   'app.tagline': 'Your Financial Companion',

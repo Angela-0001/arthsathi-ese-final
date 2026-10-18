@@ -141,20 +141,59 @@ function ResultsContent() {
     // Check connectivity with real HTTP ping (not navigator.onLine)
     const online = !isOfflineParam && await checkConnectivity();
 
-    if (!online || !userId) {
+    if (!online) {
       const cached = loadCache();
       if (cached) {
         setSchemes(cached.schemes || []);
         setInsurance(cached.insurance || []);
         setCacheAge(new Date(cached.ts));
         setIsOffline(true);
-      } else if (!userId) {
-        // No profile — redirect to onboarding
-        router.push('/onboarding');
-        return;
       }
       setLoading(false);
       return;
+    }
+
+    // If no userId, fetch general schemes list instead of recommendations
+    if (!userId) {
+      try {
+        const [sRes, iRes] = await Promise.all([
+          fetch(`${API}/api/schemes?limit=10`),
+          fetch(`${API}/api/insurance?limit=5`),
+        ]);
+
+        const sData = await sRes.json();
+        const iData = await iRes.json();
+
+        const s = sData.success ? (sData.data || []).map((scheme: any) => ({
+          ...scheme,
+          score: 0.5,
+          explain_text: 'Complete your profile for personalized recommendations',
+          eligibility_status: 'unknown'
+        })) : [];
+        
+        const i = iData.success ? (iData.data || []).map((policy: any) => ({
+          ...policy,
+          score: 0.5,
+          explain_text: 'Complete your profile for personalized recommendations',
+          eligibility_status: 'unknown'
+        })) : [];
+
+        setSchemes(s);
+        setInsurance(i);
+        saveCache({ schemes: s, insurance: i, ts: Date.now() });
+        setLoading(false);
+        return;
+      } catch {
+        const cached = loadCache();
+        if (cached) {
+          setSchemes(cached.schemes || []);
+          setInsurance(cached.insurance || []);
+          setCacheAge(new Date(cached.ts));
+          setIsOffline(true);
+        }
+        setLoading(false);
+        return;
+      }
     }
 
     try {

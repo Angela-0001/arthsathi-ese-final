@@ -61,10 +61,9 @@ arthsathi/
 psql -U postgres -h 127.0.0.1 -d arthsathi -f backend/migrations/001_initial_schema.sql
 psql -U postgres -h 127.0.0.1 -d arthsathi -f backend/migrations/002_seed_insurance.sql
 
-# Run scraper to populate schemes
+# Load schemes and insurance data from CSV
 cd scraper
-python myscheme_scraper.py --mode incremental   # ~300 schemes, takes ~5 min
-python parse_eligibility.py --reparse           # extract structured fields
+python load_to_db.py   # Loads 3400 schemes + 6 insurance policies (~10 sec)
 ```
 
 ---
@@ -78,8 +77,8 @@ Hindi, Marathi, Tamil, Telugu, Bengali, English. Language selected first; every 
 23 questions driven entirely by `i18n/questions.json` — no questions in code. Branches skip irrelevant questions (land only for farmers, disability type only if disabled, etc.). Target: ≤12 questions per user.
 
 ### Recommendation Engine
-- **326 real schemes** scraped from myscheme.gov.in
-- **6 insurance policies** (PMJJBY, PMSBY, AB-PMJAY, PMFBY, APY, PM-KMY)
+- **3400+ real schemes** loaded from validated CSV data
+- **6 insurance policies** (PMJJBY, PMSBY, AB-PMJAY, PMFBY, AABY, NREGSLI)
 - 8-feature weighted score: goal relevance, financial benefit, urgency match, eligibility margin, ease of access, coverage priority, category affinity, recency
 - MMR diversity re-ranking: max 10 schemes, max 5 insurance
 - Adaptive weights: per-user weight vector updated after every click/apply/dismiss
@@ -182,24 +181,19 @@ TWILIO_PHONE_NUMBER=  # optional
 
 ---
 
-## Scraper
+## Data Loading
 
 ```bash
-# Incremental (first 350 schemes, ~5 min)
-cd scraper && python myscheme_scraper.py --mode incremental
+# Load all schemes and insurance from CSV (recommended)
+cd scraper
+python load_to_db.py   # Loads 3400 schemes + 6 insurance policies
 
-# Full (all 5,098 schemes, ~90 min)
-python myscheme_scraper.py --mode full
-
-# Resume after interruption
-python myscheme_scraper.py --mode resume
-
-# Daily auto-schedule (runs at 02:00)
-python myscheme_scraper.py --mode incremental --schedule
-
-# Re-parse eligibility fields from cache
-python parse_eligibility.py --reparse
+# Options:
+python load_to_db.py --schemes     # Load schemes only
+python load_to_db.py --insurance   # Load insurance only
 ```
+
+**Data Source:** CSV files from reference repository (omkard0212/Major-Project) containing 3400+ validated schemes from myscheme.gov.in.
 
 ---
 

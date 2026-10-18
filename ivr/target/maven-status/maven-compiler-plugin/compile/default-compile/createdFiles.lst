@@ -1,0 +1,4 @@
+com\example\javaivr\JavaIvrApplication.class
+com\example\javaivr\controller\IvrController.class
+com\example\javaivr\service\PythonService.class
+com\example\javaivr\controller\AiTestController.class

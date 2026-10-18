@@ -12,6 +12,8 @@ import type { Metadata, Viewport } from 'next';
 import { Noto_Sans } from 'next/font/google';
 import '../styles/globals.css';
 import OfflineBanner from '../components/ui/OfflineBanner';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import LanguageInitializer from '../components/LanguageInitializer';
 
 // Noto Sans - latin + devanagari subsets (available via next/font/google)
 // Tamil, Telugu, Bengali loaded via separate Noto font families below
@@ -62,6 +64,7 @@ export default function RootLayout({
         <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'} />
       </head>
       <body className="bg-surface min-h-screen">
+        <LanguageInitializer />
         <OfflineBanner />
         {children}
         {/* Service worker registration */}

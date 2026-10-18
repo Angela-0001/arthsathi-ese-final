@@ -1,0 +1,62 @@
+{
+  "health": {
+    "required_fields": ["age", "family_members"],
+    "optional_fields": ["existing_coverage", "budget"],
+    "products": [
+      {
+        "name": "Ayushman Bharat DEMO",
+        "data_status": "DEMO_ONLY",
+        "coverage": "₹5 lakh per family",
+        "note": "DEMO ONLY - This is prototype data"
+      }
+    ]
+  },
+  "life": {
+    "required_fields": ["age", "occupation"],
+    "optional_fields": ["coverage_amount", "family_members"],
+    "products": [
+      {
+        "name": "Term Life Insurance DEMO",
+        "data_status": "DEMO_ONLY",
+        "coverage": "₹10-50 lakh based on age and occupation",
+        "note": "DEMO ONLY - This is prototype data"
+      }
+    ]
+  },
+  "vehicle": {
+    "required_fields": ["vehicle_type", "age"],
+    "optional_fields": ["vehicle_age", "idv"],
+    "products": [
+      {
+        "name": "Two Wheeler/Four Wheeler Insurance DEMO",
+        "data_status": "DEMO_ONLY",
+        "coverage": "Third Party + Comprehensive options available",
+        "note": "DEMO ONLY - This is prototype data"
+      }
+    ]
+  },
+  "accident": {
+    "required_fields": ["age", "occupation"],
+    "optional_fields": ["lifestyle"],
+    "products": [
+      {
+        "name": "Personal Accident Insurance DEMO",
+        "data_status": "DEMO_ONLY",
+        "coverage": "₹1-10 lakh based on occupation",
+        "note": "DEMO ONLY - This is prototype data"
+      }
+    ]
+  },
+  "other": {
+    "required_fields": ["age"],
+    "optional_fields": [],
+    "products": [
+      {
+        "name": "General Insurance DEMO",
+        "data_status": "DEMO_ONLY",
+        "coverage": "Varies by insurance type",
+        "note": "DEMO ONLY - This is prototype data"
+      }
+    ]
+  }
+}

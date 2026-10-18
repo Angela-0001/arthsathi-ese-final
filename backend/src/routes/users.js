@@ -240,4 +240,14 @@ router.get('/:id/profile', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+/* ── GET /api/users?phone=XXXXXXXXXX — find user by phone ────────── */
+router.get('/', async (req, res, next) => {
+  try {
+    const { phone } = req.query;
+    if (!phone) return res.json({ success: true, data: [] });
+    const r = await query('SELECT * FROM users WHERE phone_number = $1', [phone]);
+    res.json({ success: true, data: r.rows });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

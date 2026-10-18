@@ -97,6 +97,7 @@ app.use('/api/i18n',      i18nRoutes);
 app.use('/api/telegram',  telegramRoutes);
 app.use('/api/whatsapp',  whatsappRoutes);
 app.use('/api/channels',  channelsRoutes);
+app.use('/api/auth',      require('./routes/auth'));
 
 // Root — simple info response
 app.get('/', (req, res) => {

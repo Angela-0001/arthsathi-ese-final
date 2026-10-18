@@ -1,0 +1,42 @@
+{
+  "id": "FEAT-004",
+  "type": "test",
+  "description": "Final integration verification: test complete user journey across all redesigned pages, verify mobile responsiveness, accessibility compliance (WCAG touch targets, keyboard navigation, screen reader support), offline PWA functionality, cross-browser compatibility, and performance. Fix any integration issues found.",
+  "status": "pending",
+  "steps": [
+    "Test complete user journey: (1) Land on homepage, (2) Switch language and verify all text changes, (3) Click main CTA to go to /auth, (4) Complete signup with phone number, verify redirect to /dashboard, (5) From dashboard, click 'Check My Eligibility', (6) Complete onboarding questionnaire (test both text and voice modes), (7) View results at /results, test scheme/insurance tabs, click Apply on a scheme, (8) Navigate to /document via navbar or dashboard, upload a test image, verify OCR and summary, (9) Navigate to /connect, test all three channel cards, (10) Navigate to /ivr, test tap-to-call. Record any UI bugs, broken links, API errors, styling issues.",
+    "Mobile responsiveness testing: use Chrome DevTools device emulation, test on: (1) iPhone SE (375px), (2) iPhone 12 Pro (390px), (3) Pixel 5 (393px), (4) iPad (768px). Verify: navbar collapses to hamburger menu on mobile, bottom tab bar appears if implemented, all cards stack vertically, all buttons remain min 48px tall, text remains readable (not too small), no horizontal scroll, forms fit within viewport, modals center correctly. Fix any layout issues.",
+    "Accessibility audit: (1) Verify all interactive elements (buttons, links, inputs) have min-h-[48px] (WCAG 2.5.5 Level AAA 44px minimum, we use 48px), (2) Test keyboard navigation: Tab through all interactive elements, Enter to activate buttons, Escape to close modals, (3) Check color contrast: text on primary background should have 4.5:1 ratio minimum (use WebAIM contrast checker for #F97316 orange on white, #16A34A green on white, #0EA5E9 blue on white), adjust if needed, (4) Verify all images have alt text, buttons have aria-labels where text is not descriptive (e.g. close buttons, icon-only buttons), form inputs have labels. Note: Full screen reader testing not done, add note in findings that manual screen reader validation recommended.",
+    "Offline PWA testing: (1) Load app with all services running, complete onboarding to cache results, (2) Stop backend service, (3) Reload app, verify offline banner appears, (4) Navigate to /results, verify cached results load, (5) Try to complete new onboarding, verify offline queue behavior or appropriate error message, (6) Restart backend, verify app reconnects and syncs queued data if any. Check that service worker still registers (check browser DevTools Application tab).",
+    "Cross-page navigation testing: verify all navbar links work (Home → /, Eligibility → /onboarding, Documents → /document, Connect → /connect, Call Us → /ivr), dashboard cards navigate correctly, back buttons work, no broken links, browser back/forward buttons work correctly with Next.js App Router.",
+    "Performance check: (1) Run Lighthouse audit in Chrome DevTools on homepage, dashboard, and results page, (2) Verify Performance score > 70 (acceptable for dev server), Accessibility score > 90, Best Practices > 80, (3) Check Network tab: first page load should be < 3s on Fast 3G throttling (acceptable for rural users), (4) Verify no unnecessary re-renders or memory leaks (check React DevTools Profiler). Document any performance concerns in findings.",
+    "Final code review: (1) Check for any console errors or warnings in browser console across all pages, (2) Verify no TypeScript compilation errors: run cd c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend && npm run build, (3) Verify all environment variables documented in README or .env.example, (4) Verify all localStorage keys consistent (use 'as_' prefix: as_user_id, as_profile, as_lang, as_mode, as_results_v2), (5) Run grep for any remaining TODO or FIXME comments, resolve or document.",
+    "Fix any bugs or issues found in above steps: create focused fixes for broken functionality, styling issues, accessibility violations, performance bottlenecks. Re-test after fixes."
+  ],
+  "acceptance_criteria": [
+    "Complete user journey flows from homepage → auth → dashboard → onboarding → results → document → connect/ivr works without errors",
+    "All pages render correctly on mobile viewports (375px, 390px, 393px, 768px) with no horizontal scroll, readable text, usable touch targets",
+    "All interactive elements meet WCAG 2.5.5 minimum 48px touch target size",
+    "Keyboard navigation works: can Tab through all elements, Enter activates, Escape closes modals",
+    "Color contrast meets WCAG AA 4.5:1 minimum for all text/background combinations",
+    "Offline PWA functionality works: cached results load when backend is down, offline banner shows, app reconnects when backend returns",
+    "All navigation links work correctly across navbar, dashboard, and pages",
+    "Lighthouse audit scores: Performance > 70, Accessibility > 90, Best Practices > 80",
+    "npm run build completes without errors",
+    "No console errors or warnings on any page",
+    "All environment variables documented"
+  ],
+  "verification": [
+    "Run complete user journey test and verify each step completes successfully",
+    "Open Chrome DevTools, set device emulation to iPhone SE (375px), reload app, navigate through all pages and verify layout works",
+    "Repeat device emulation test for iPhone 12 Pro (390px), Pixel 5 (393px), iPad (768px)",
+    "Use Tab key to navigate homepage, dashboard, auth, and results pages - verify logical tab order and all interactive elements reachable",
+    "Run Lighthouse audit (DevTools > Lighthouse > Mobile > Generate report) on http://localhost:3000, http://localhost:3000/dashboard, http://localhost:3000/results - verify scores meet criteria",
+    "Stop backend service (cd backend && Ctrl+C), reload http://localhost:3000/results in browser, verify offline banner appears and cached results display",
+    "Run: cd c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend && npm run build and verify it completes with 'Compiled successfully' message",
+    "Open browser console on each page (/, /auth, /dashboard, /onboarding, /results, /document, /connect, /ivr) and verify no red errors (warnings acceptable)",
+    "Check c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend\\.env.example exists and documents all NEXT_PUBLIC_* variables"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

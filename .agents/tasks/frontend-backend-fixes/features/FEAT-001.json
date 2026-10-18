@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix layout header visibility and i18n import issues. The sticky header from layout.tsx appears on landing and auth pages which have their own full-screen gradient headers, causing visual clutter. The landing page also imports i18n from wrong path ('../i18n' instead of '@/i18n').",
+  "status": "pending",
+  "steps": [
+    "1. In frontend/app/layout.tsx: Import usePathname from 'next/navigation' and wrap header in conditional: only render when pathname !== '/' and pathname !== '/auth'. This hides the global header on landing and auth pages.",
+    "2. In frontend/app/page.tsx line 15: Change import from '../i18n' to '@/i18n' to use the path alias defined in tsconfig.json.",
+    "3. In frontend/app/page.tsx line 77: Change dynamic import from '../i18n' to '@/i18n'.",
+    "4. Test by navigating to / (landing) and /auth - global header should NOT appear. Navigate to /onboarding, /results, /document - global header SHOULD appear."
+  ],
+  "acceptance_criteria": [
+    "Landing page (/) shows no white sticky header at top - only the gradient header with logo",
+    "Auth page (/auth) shows no white sticky header - only the gradient header",
+    "Onboarding, results, and document pages show the white sticky header with ArthSathi logo and language switcher",
+    "npm run build completes without TypeScript errors about i18n imports"
+  ],
+  "verification": [
+    "cd frontend && npm run build - should complete successfully",
+    "npm run dev and visit http://localhost:3000 - header should not appear",
+    "Visit /auth - header should not appear",
+    "Visit /onboarding - header should appear",
+    "Visit /results - header should appear",
+    "Visit /document - header should appear"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

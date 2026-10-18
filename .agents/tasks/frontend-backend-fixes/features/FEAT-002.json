@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Improve LanguageSwitcher to avoid full page reload. Current implementation calls window.location.reload() which breaks SPA behavior and loses user state. Replace with Next.js router.refresh() and custom event emission for smoother language switching.",
+  "status": "pending",
+  "steps": [
+    "1. In frontend/components/LanguageSwitcher.tsx: Import useRouter from 'next/navigation' at the top.",
+    "2. In the component body: Add const router = useRouter();",
+    "3. In handleChange function: Replace window.location.reload() with two calls: router.refresh() and window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: newLang } }));",
+    "4. Test language switching: Select a different language in the header dropdown - page should NOT reload (no white flash), but text should update smoothly."
+  ],
+  "acceptance_criteria": [
+    "Selecting a new language in the header dropdown updates all translated text without full page reload",
+    "No white flash or loss of scroll position when switching languages",
+    "localStorage is updated with new language preference",
+    "document.documentElement.lang attribute is updated to reflect new language"
+  ],
+  "verification": [
+    "npm run dev and visit any page with the language switcher visible (e.g., /onboarding)",
+    "Click the language dropdown and select a different language (e.g., English → Hindi)",
+    "Page should NOT reload - observe that browser tab does not show the loading indicator",
+    "Translated text should update smoothly without scroll position loss",
+    "Open DevTools Console and verify no errors appear",
+    "Check localStorage in DevTools Application tab - arthsathi_lang should match selected language"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
