@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ArthSathi — Desktop Navbar Component
  *
  * Sticky top navigation with logo, links, language switcher, auth/profile
@@ -33,10 +33,11 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { href: '/', label: t('nav.home'), key: 'home' },
-    { href: '/onboarding', label: t('nav.eligibility'), key: 'eligibility' },
-    { href: '/document', label: t('nav.documents'), key: 'documents' },
-    { href: '/channels', label: t('nav.connect'), key: 'connect' },
+    { href: '/',           label: t('nav.home')      || 'Home',     key: 'home' },
+    { href: '/results',    label: t('nav.mySchemes') || 'Schemes',  key: 'schemes' },
+    { href: '/document',   label: t('nav.documents') || 'Analyse',  key: 'analyse' },
+    { href: '/channels',   label: t('nav.connect')   || 'Connect',  key: 'connect' },
+    { href: '/roadmap',    label: t('nav.roadmap')   || 'Roadmap',  key: 'roadmap' },
   ];
 
   return (
@@ -65,14 +66,7 @@ export default function Navbar() {
               </Link>
             ))}
 
-            {/* IVR Call Us Link */}
-            <a
-              href={`tel:${process.env.NEXT_PUBLIC_IVR_NUMBER || '+911234567890'}`}
-              className="px-3 py-2 rounded-lg font-medium text-white/90 hover:bg-white/10 transition-colors flex items-center gap-2"
-            >
-              <span>📞</span>
-              <span>{t('nav.callUs')}</span>
-            </a>
+
           </div>
 
           {/* Right side: Language + Auth */}

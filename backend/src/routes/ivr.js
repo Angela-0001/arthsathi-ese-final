@@ -80,8 +80,8 @@ const LANG_GREETINGS = {
 
 const LANG_NAMES = { hi: 'Hindi', mr: 'Marathi', ta: 'Tamil', te: 'Telugu', bn: 'Bengali', en: 'English' };
 
-// DTMF → language mapping
-const KEY_TO_LANG = { '1': 'hi', '2': 'mr', '3': 'ta', '4': 'te', '5': 'bn', '6': 'en' };
+// DTMF → language mapping (3 languages only)
+const KEY_TO_LANG = { '1': 'hi', '2': 'mr', '3': 'en' };
 
 // Base URL for IVR redirects
 const BASE_URL = () => process.env.BASE_URL || `http://localhost:${process.env.PORT || 3001}`;
@@ -107,10 +107,7 @@ router.post('/voice', (req, res) => {
       'Welcome to ArthSathi. Apni bhasha chunen.',
       'Ek dabain Hindi ke liye.',
       'Do dabain Marathi ke liye.',
-      'Teen dabain Tamil ke liye.',
-      'Char dabain Telugu ke liye.',
-      'Paanch dabain Bengali ke liye.',
-      'Chhe dabain English ke liye.',
+      'Teen dabain English ke liye.',
     ].join(' '));
 
     // If no input, repeat
@@ -215,7 +212,7 @@ router.post('/occupation', (req, res) => {
 
   twiml(res, (resp) => {
     const gather = resp.gather({
-      numDigits: '4',
+      numDigits: '5',
       action:    `${BASE_URL()}/api/ivr/income?lang=${lang}&caller=${encodeURIComponent(caller)}&age=${age}&gender=${gender}&caste=${caste}&occ=${occupation}`,
       method:    'POST',
       timeout:   '15',
@@ -313,40 +310,27 @@ router.post('/bank', async (req, res) => {
       console.error('[IVR] DB error:', dbErr.message);
     }
 
-    // Get recommendations - use DB directly, no engine dependency for IVR
+    // Get recommendations — simple query that works with actual schema
     let schemes = [], insurance = [];
     try {
-      // Build a simple eligibility-based query from the collected profile
       const schemeResult = await query(`
-        SELECT id, name, benefit_amount_max, category, source_url
-        FROM schemes 
+        SELECT id, name, benefit_amount_max, benefit_amount_min, category, application_url
+        FROM schemes
         WHERE is_active = TRUE
-          AND (requires_student = FALSE OR $1 = FALSE)
-          AND (requires_farmer = FALSE OR $2 = TRUE)
-          AND (requires_bpl = FALSE OR $3 = TRUE)
-          AND (requires_bank_account = FALSE OR $4 = TRUE)
-        ORDER BY 
-          CASE WHEN requires_farmer = $2 THEN 0 ELSE 1 END,
-          benefit_amount_max DESC NULLS LAST
+        ORDER BY benefit_amount_max DESC NULLS LAST
         LIMIT 3
-      `, [
-        safeOcc === 'student',
-        ['farmer','marginal_farmer'].includes(safeOcc),
-        true, // everyone on IVR is assumed low-income
-        hasBank
-      ]);
+      `);
       schemes = schemeResult.rows;
 
       const insResult = await query(`
-        SELECT id, name, annual_premium, coverage_amount, source_url
+        SELECT id, name, annual_premium, coverage_amount, application_url
         FROM insurance_policies
         WHERE is_active = TRUE
           AND (min_age IS NULL OR $1 >= min_age)
           AND (max_age IS NULL OR $1 <= max_age)
-          AND (requires_bank_account = FALSE OR $2 = TRUE)
         ORDER BY annual_premium ASC NULLS LAST
         LIMIT 2
-      `, [parseInt(age,10) || 25, hasBank]);
+      `, [parseInt(age, 10) || 25]);
       insurance = insResult.rows;
 
     } catch (dbErr) {
@@ -458,7 +442,8 @@ router.get('/test', async (req, res) => {
 // Twilio voice locale helpers
 // ---------------------------------------------------------------------------
 function langVoice(lang) {
-  const map = { hi: 'hi-IN', mr: 'hi-IN', ta: 'ta-IN', te: 'te-IN', bn: 'bn-IN', en: 'en-IN' };
+  // mr-IN not supported by Twilio Polly — fallback to hi-IN
+  const map = { hi: 'hi-IN', mr: 'hi-IN', en: 'en-IN' };
   return map[lang] || 'hi-IN';
 }
 
@@ -469,9 +454,6 @@ function ageQuestion(lang) {
   const q = {
     hi: 'Aapki umar kitni hai? Kripaya do ank mein dabain. Jaise 35 ke liye 3 aur 5 dabain.',
     mr: 'Tumchi vay kiti ahe? Kripaya do ankde daba.',
-    ta: 'Ungal vayadu enna? Irandu elakkam anukku anukku anukku anukku. Thayal seyyavum.',
-    te: 'Meeru vayassu enkuvo? Rendu digits press cheyyandi.',
-    bn: 'Apnar boyos koto? Duti digit press korun.',
     en: 'How old are you? Please press two digits. For example, press 3 5 for age 35.',
   };
   return q[lang] || q.hi;
@@ -481,9 +463,6 @@ function genderQuestion(lang) {
   const q = {
     hi: 'Aapka ling kya hai? 1 dabain purush ke liye. 2 dabain mahila ke liye. 3 dabain any ke liye.',
     mr: 'Tumcha ling kaye? 1 purush. 2 mahila. 3 itar.',
-    ta: 'Ungal paalinum enna? 1 - aaN. 2 - pen. 3 - pirar.',
-    te: 'Meeru linga vivaram entha? 1 - purushuni. 2 - stree. 3 - ithara.',
-    bn: 'Apnar ling ki? 1 - purush. 2 - mohila. 3 - anya.',
     en: 'What is your gender? Press 1 for male. Press 2 for female. Press 3 for other.',
   };
   return q[lang] || q.hi;
@@ -493,9 +472,6 @@ function casteQuestion(lang) {
   const q = {
     hi: 'Aapki jaati shreni kya hai? 1 dabain samanya ke liye. 2 OBC. 3 SC. 4 ST. 5 anya.',
     mr: 'Tumchi jaat shreni kaye? 1 samanya. 2 OBC. 3 SC. 4 ST. 5 itar.',
-    ta: 'Ungal jaati pirivu enna? 1 - samanya. 2 - OBC. 3 - SC. 4 - ST. 5 - ithara.',
-    te: 'Meeru kula vargam entha? 1 - samanya. 2 - OBC. 3 - SC. 4 - ST. 5 - ithara.',
-    bn: 'Apnar jati barga ki? 1 - samanya. 2 - OBC. 3 - SC. 4 - ST. 5 - anya.',
     en: 'What is your caste category? Press 1 general. 2 OBC. 3 SC. 4 ST. 5 other.',
   };
   return q[lang] || q.hi;

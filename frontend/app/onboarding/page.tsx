@@ -1,24 +1,20 @@
-'use client';
+﻿'use client';
 /**
- * ArthSathi — Adaptive Onboarding Page (v2)
- *
- * Questions are driven entirely by data from the shared i18n/questions.json
- * and the questions definition in i18n/questions.json (structure).
- * - Language is selected first; every subsequent question renders in that language.
- * - Branching: only questions relevant to earlier answers are shown.
- * - Voice mode: questions read aloud via browser speechSynthesis, mic input
- *   sends to /api/voice/stt, result is confirmed before proceeding.
- * - Large touch targets (min 56px), icon-first, one question per screen.
+ * ArthSathi — Adaptive Onboarding Page (v3)
+ * Languages: Hindi (hi), Marathi (mr), English (en)
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { LANGUAGES, type LangCode, setLanguage as persistLang, setMode as persistMode, getSavedLanguage, getSavedMode } from '../../lib/i18n';
+import { getApiUrl } from '@/lib/config';
+import { LANGUAGES, type LanguageCode, setLanguage as persistLang } from '@/i18n';
+import { setMode as persistMode, getSavedLanguage, getSavedMode } from '@/lib/i18n';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API = getApiUrl();
 
-// ─── Types ────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
+type LangCode = LanguageCode;
 type InteractionMode = 'text' | 'voice';
 
 interface Profile {
@@ -62,7 +58,6 @@ const EMPTY: Profile = {
   financial_goal: '', goal_amount: '', urgency_level: '',
 };
 
-// Indian states list
 const STATES = [
   'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh',
   'Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka',
@@ -73,7 +68,6 @@ const STATES = [
   'Andaman and Nicobar Islands','Dadra and Nagar Haveli','Lakshadweep',
 ];
 
-// Step definitions
 type StepType = 'lang_select'|'mode_select'|'text'|'choice'|'choice_grid'|
                 'yesno'|'number'|'state_select'|'income_band'|'ration_card'|
                 'goal_select'|'urgency_scale';
@@ -90,25 +84,25 @@ const STEPS: StepDef[] = [
   { id: 'preferred_language', type: 'lang_select',   icon: '🌐', required: true },
   { id: 'interaction_mode',   type: 'mode_select',   icon: '🎤', required: true },
   { id: 'state',              type: 'state_select',  icon: '📍', required: true },
-  { id: 'age',                type: 'number',        icon: '🎂', required: true },
+  { id: 'age',                type: 'number',        icon: '👶', required: true },
   { id: 'gender',             type: 'choice',        icon: '👤' },
   { id: 'caste_category',     type: 'choice',        icon: '📋' },
   { id: 'occupation',         type: 'choice_grid',   icon: '💼', required: true },
-  { id: 'monthly_income',     type: 'income_band',   icon: '💰', required: true },
-  { id: 'ration_card_type',   type: 'ration_card',   icon: '🪪' },
+  { id: 'monthly_income',     type: 'income_band',   icon: '💵', required: true },
+  { id: 'ration_card_type',   type: 'ration_card',   icon: '📜' },
   { id: 'has_bank_account',   type: 'yesno',         icon: '🏦' },
   { id: 'has_jan_dhan_account',type:'yesno',          icon: '🏦', show: (p) => p.has_bank_account === true },
-  { id: 'has_aadhaar',        type: 'yesno',         icon: '🪪' },
+  { id: 'has_aadhaar',        type: 'yesno',         icon: '📜' },
   { id: 'land_holding_acres', type: 'number',        icon: '🌾', show: (p) => ['farmer','marginal_farmer'].includes(p.occupation) },
   { id: 'has_disability',     type: 'yesno',         icon: '♿' },
-  { id: 'disability_type',    type: 'choice',        icon: '🩺', show: (p) => p.has_disability === true },
-  { id: 'is_widow',           type: 'yesno',         icon: '💙', show: (p) => p.gender === 'female' },
+  { id: 'disability_type',    type: 'choice',        icon: '♿', show: (p) => p.has_disability === true },
+  { id: 'is_widow',           type: 'yesno',         icon: '👩', show: (p) => p.gender === 'female' },
   { id: 'has_girl_child',     type: 'yesno',         icon: '👧', show: (p) => p.gender === 'female' },
   { id: 'is_student',         type: 'yesno',         icon: '📚', show: (p) => parseInt(p.age || '99') <= 30 },
   { id: 'education_level',    type: 'choice',        icon: '🎓', show: (p) => p.is_student === true || p.occupation === 'student' },
   { id: 'num_dependents',     type: 'number',        icon: '👨‍👩‍👧' },
   { id: 'financial_goal',     type: 'goal_select',   icon: '🎯', required: true },
-  { id: 'goal_amount',        type: 'number',        icon: '💵' },
+  { id: 'goal_amount',        type: 'number',        icon: '💡' },
   { id: 'urgency_level',      type: 'urgency_scale', icon: '⚡', required: true },
 ];
 
@@ -116,7 +110,7 @@ function getActiveSteps(p: Profile) {
   return STEPS.filter(s => !s.show || s.show(p));
 }
 
-// ─── Question text lookup ─────────────────────────────────────────────────
+// ─── Question text lookup ─────────────────────────────────────────────────────
 
 type QData = Record<string, unknown>;
 
@@ -150,33 +144,31 @@ function common(data: QData, key: string): string {
   return typeof val === 'string' ? val : key;
 }
 
-// ─── TTS helper ──────────────────────────────────────────────────────────
+// ─── TTS helper ───────────────────────────────────────────────────────────────
 
 function speak(text: string, lang: LangCode) {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
-  const locales: Record<LangCode, string> = {
-    hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', te: 'te-IN', bn: 'bn-IN', en: 'en-IN',
-  };
+  const locales: Record<LangCode, string> = { hi: 'hi-IN', mr: 'mr-IN', en: 'en-IN' };
   utter.lang = locales[lang] || 'hi-IN';
   utter.rate = 0.85;
   window.speechSynthesis.speak(utter);
 }
 
-// ─── Component ───────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [profile, setProfile]   = useState<Profile>({ ...EMPTY });
-  const [stepIdx, setStepIdx]   = useState(0);
-  const [qData, setQData]       = useState<QData>({});
-  const [submitting, setSub]    = useState(false);
-  const [error, setError]       = useState('');
-  const [recording, setRec]     = useState(false);
-  const [voiceText, setVoiceTxt]= useState('');
-  const mediaRef                = useRef<MediaRecorder | null>(null);
-  const chunksRef               = useRef<Blob[]>([]);
+  const [profile, setProfile]    = useState<Profile>({ ...EMPTY });
+  const [stepIdx, setStepIdx]    = useState(0);
+  const [qData, setQData]        = useState<QData>({});
+  const [submitting, setSub]     = useState(false);
+  const [error, setError]        = useState('');
+  const [recording, setRec]      = useState(false);
+  const [voiceText, setVoiceTxt] = useState('');
+  const mediaRef                 = useRef<MediaRecorder | null>(null);
+  const chunksRef                = useRef<Blob[]>([]);
 
   // Load translations on language change
   useEffect(() => {
@@ -191,24 +183,50 @@ export default function OnboardingPage() {
   useEffect(() => {
     const saved = localStorage.getItem('as_profile');
     if (saved) {
-      try { setProfile({ ...EMPTY, ...JSON.parse(saved) }); } catch {}
+      try {
+        const parsed = JSON.parse(saved);
+        setProfile({ ...EMPTY, ...parsed });
+        // If profile already has key fields filled, skip to step 2
+        if (parsed.age && parsed.occupation) {
+          setStepIdx(2);
+        }
+      } catch {}
     }
     const savedLang = getSavedLanguage();
     const savedMode = getSavedMode();
     setProfile(p => ({ ...p, preferred_language: savedLang, interaction_mode: savedMode }));
   }, []);
 
-  // Auto-save
+  // Auto-save to localStorage
   useEffect(() => {
     localStorage.setItem('as_profile', JSON.stringify(profile));
   }, [profile]);
 
+  // Auto-save partial profile to backend every 5 steps
+  useEffect(() => {
+    if (stepIdx > 0 && stepIdx % 5 === 0) {
+      const userId = localStorage.getItem('as_user_id');
+      if (userId && profile.age) {
+        fetch(`${API}/api/users/${userId}/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            age: parseInt(profile.age) || null,
+            gender: profile.gender || null,
+            caste_category: profile.caste_category || null,
+            occupation: profile.occupation || null,
+            monthly_income: parseFloat(profile.monthly_income) || null,
+            state: profile.state || null,
+          }),
+        }).catch(() => {});
+      }
+    }
+  }, [stepIdx]);
+
   // Guard: require login
   useEffect(() => {
     const userId = localStorage.getItem('as_user_id');
-    if (!userId) {
-      router.push('/auth');
-    }
+    if (!userId) router.push('/auth');
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeSteps = getActiveSteps(profile);
@@ -233,7 +251,7 @@ export default function OnboardingPage() {
     if (step.required) {
       const val = profile[step.id];
       if (val === '' || val === null || val === undefined) {
-        setError('Please answer this question to continue');
+        setError(common(qData, 'required_error') || 'Please answer to continue');
         return;
       }
     }
@@ -247,68 +265,47 @@ export default function OnboardingPage() {
   const submit = async () => {
     setSub(true);
     try {
-      // 1. Create user
-      const uRes = await fetch(`${API}/api/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone_number: profile.phone_number || null,
-          full_name: profile.full_name || null,
-          state: profile.state,
-          district: profile.district,
-          preferred_language: profile.preferred_language,
-          interaction_mode: profile.interaction_mode,
-        }),
-      });
-      if (!uRes.ok) throw new Error('Could not save user');
-      const uData = await uRes.json();
-      const userId = uData.data.id;
-      localStorage.setItem('as_user_id', userId);
-
-      // 2. Save financial profile
+      const userId = localStorage.getItem('as_user_id');
+      if (!userId) { router.push('/auth'); return; }
       const monthlyIncome = parseFloat(profile.monthly_income) || 0;
       const pRes = await fetch(`${API}/api/users/${userId}/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          age: parseInt(profile.age) || null,
-          gender: profile.gender || null,
-          caste_category: profile.caste_category || null,
-          occupation: profile.occupation || null,
-          monthly_income: monthlyIncome,
-          annual_income: monthlyIncome * 12,
+          age:             parseInt(profile.age) || null,
+          gender:          profile.gender || null,
+          caste_category:  profile.caste_category || null,
+          occupation:      profile.occupation || null,
+          monthly_income:  monthlyIncome,
+          state:           profile.state || null,
           ration_card_type: profile.ration_card_type || null,
-          is_bpl: ['aay', 'phh'].includes(profile.ration_card_type),
-          has_bank_account: profile.has_bank_account,
-          has_jan_dhan_account: profile.has_jan_dhan_account,
-          has_aadhaar: profile.has_aadhaar,
-          land_holding_acres: parseFloat(profile.land_holding_acres) || 0,
-          has_disability: profile.has_disability,
+          is_bpl:          ['aay','phh'].includes(profile.ration_card_type),
+          has_disability:  profile.has_disability,
           disability_type: profile.disability_type || null,
-          is_widow: profile.is_widow,
-          has_girl_child: profile.has_girl_child,
-          is_student: profile.is_student || profile.occupation === 'student',
+          is_student:      profile.is_student || profile.occupation === 'student',
           education_level: profile.education_level || null,
-          num_dependents: parseInt(profile.num_dependents) || 0,
-          financial_goal: profile.financial_goal,
-          goal_amount: parseFloat(profile.goal_amount) || null,
-          urgency_level: parseInt(profile.urgency_level) || 3,
+          num_dependents:  parseInt(profile.num_dependents) || null,
+          financial_goal:  profile.financial_goal,
+          goal_amount:     parseFloat(profile.goal_amount) || null,
+          urgency_level:   parseInt(profile.urgency_level) || 3,
         }),
       });
       if (!pRes.ok) throw new Error('Could not save profile');
-
       router.push('/results');
-    } catch {
-      // Queue offline, redirect anyway
-      localStorage.setItem('as_offline_profile', JSON.stringify(profile));
-      router.push('/results?offline=1');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      alert('Could not save: ' + msg);
     } finally {
       setSub(false);
     }
   };
 
-  // Voice recording
-  const startRecording = async () => {
+  // Voice recording — click toggle
+  const toggleRecording = async () => {
+    if (recording) {
+      mediaRef.current?.stop();
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mime   = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
@@ -339,7 +336,19 @@ export default function OnboardingPage() {
     }
   };
 
-  const stopRecording = () => { mediaRef.current?.stop(); };
+  // Show skeleton while qData loads
+  if (!qData || Object.keys(qData).length === 0) {
+    return (
+      <main className="min-h-screen bg-white flex flex-col max-w-lg mx-auto p-5">
+        <div className="h-2 bg-gray-100 rounded-full mb-8" />
+        <div className="skeleton h-8 w-3/4 mb-4 rounded-xl" />
+        <div className="skeleton h-6 w-1/2 mb-8 rounded-xl" />
+        <div className="space-y-3">
+          {[1,2,3].map(i => <div key={i} className="skeleton h-16 rounded-2xl" />)}
+        </div>
+      </main>
+    );
+  }
 
   if (!step) return null;
 
@@ -361,8 +370,7 @@ export default function OnboardingPage() {
     <main className="min-h-screen bg-white flex flex-col max-w-lg mx-auto">
       {/* Progress bar */}
       <div className="h-2 bg-gray-100 sticky top-0 z-10">
-        <div className="h-2 bg-primary transition-all duration-500"
-          style={{ width: `${progress}%` }} />
+        <div className="h-2 bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
 
       {/* Header */}
@@ -387,7 +395,6 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Input */}
         <div className="flex-1">
           <StepInput
             step={step}
@@ -405,8 +412,8 @@ export default function OnboardingPage() {
         {profile.interaction_mode === 'voice' && ['text','number'].includes(step.type) && (
           <div className="mt-5 flex flex-col items-center gap-2">
             <button
-              onPointerDown={startRecording}
-              onPointerUp={stopRecording}
+              onClick={toggleRecording}
+              onPointerCancel={() => mediaRef.current?.stop()}
               className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl text-white shadow-lg transition-transform active:scale-95 ${recording ? 'bg-red-500 voice-recording' : 'bg-primary'}`}
               aria-label={recording ? 'Stop recording' : 'Start recording'}
             >{recording ? '🔴' : '🎤'}</button>
@@ -416,10 +423,7 @@ export default function OnboardingPage() {
                 <span className="text-base text-gray-800">"{voiceText}"</span>
                 <button
                   className="bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold"
-                  onClick={() => {
-                    update(step.id, voiceText);
-                    setVoiceTxt('');
-                  }}
+                  onClick={() => { update(step.id, voiceText); setVoiceTxt(''); }}
                 >Use ✓</button>
               </div>
             )}
@@ -433,11 +437,7 @@ export default function OnboardingPage() {
 
       {/* Navigation */}
       <div className="px-5 pb-8 pt-2 space-y-3 safe-padding border-t border-gray-100">
-        <button
-          onClick={handleNext}
-          disabled={submitting}
-          className="btn-primary"
-        >
+        <button onClick={handleNext} disabled={submitting} className="btn-primary">
           {submitting ? (common(qData,'loading')||'Loading...') : isLast ? commonFinish : commonNext}
         </button>
         {stepIdx > 0 && (
@@ -452,7 +452,7 @@ export default function OnboardingPage() {
   );
 }
 
-// ─── StepInput ────────────────────────────────────────────────────────────
+// ─── StepInput ────────────────────────────────────────────────────────────────
 
 interface SIProps {
   step: StepDef;
@@ -470,12 +470,12 @@ function StepInput({ step, val, options, profile, onChange, yes, no, qData }: SI
 
   if (step.type === 'lang_select') {
     return (
-      <div className="grid grid-cols-2 gap-3">
-        {(Object.entries(LANGUAGES) as [LangCode, { native: string }][]).map(([code, info]) => (
+      <div className="grid grid-cols-3 gap-3">
+        {(Object.entries(LANGUAGES) as [LangCode, { name: string; nativeName: string; rtl: boolean }][]).map(([code, info]) => (
           <button key={code}
             onClick={() => { onChange(id, code); persistLang(code); }}
             className={`py-5 rounded-2xl border-2 text-xl font-bold transition-all ${val === code ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-700'}`}
-          >{info.native}</button>
+          >{info.nativeName}</button>
         ))}
       </div>
     );
@@ -536,7 +536,9 @@ function StepInput({ step, val, options, profile, onChange, yes, no, qData }: SI
   if (step.type === 'income_band') {
     const incomeStep = (qData as Record<string, unknown>).monthly_income as Record<string, unknown>;
     const incomeOpts = incomeStep?.options as Record<string, string> || options;
-    const ICONS: Record<string, string> = { '0':'0️⃣','2000':'1️⃣','5000':'2️⃣','8000':'3️⃣','12000':'4️⃣','20000':'5️⃣','30000':'6️⃣' };
+    const ICONS: Record<string, string> = {
+      '0':'0️⃣','2000':'1️⃣','5000':'2️⃣','8000':'3️⃣','12000':'4️⃣','20000':'5️⃣','30000':'6️⃣'
+    };
     return (
       <div className="space-y-3">
         {Object.entries(incomeOpts).map(([v, label]) => (
@@ -544,7 +546,7 @@ function StepInput({ step, val, options, profile, onChange, yes, no, qData }: SI
             onClick={() => onChange(id, v)}
             className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${val === v ? 'border-primary bg-primary/10' : 'border-gray-200'}`}
           >
-            <span className="text-3xl">{ICONS[v] || '💰'}</span>
+            <span className="text-3xl">{ICONS[v] || '💵'}</span>
             <span className="text-lg font-medium text-gray-900">{label}</span>
           </button>
         ))}
@@ -572,7 +574,7 @@ function StepInput({ step, val, options, profile, onChange, yes, no, qData }: SI
             onClick={() => onChange(id, v)}
             className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${CARD_COLORS[v] || 'border-gray-200'} ${val === v ? 'ring-2 ring-primary' : ''}`}
           >
-            <span className="text-3xl">{CARD_ICONS[v] || '🪪'}</span>
+            <span className="text-3xl">{CARD_ICONS[v] || '📜'}</span>
             <span className="text-base font-medium text-gray-900">{label}</span>
           </button>
         ))}
@@ -582,10 +584,10 @@ function StepInput({ step, val, options, profile, onChange, yes, no, qData }: SI
 
   if (step.type === 'choice_grid') {
     const OCCI: Record<string, string> = {
-      farmer:'🌾', marginal_farmer:'🌱', farm_laborer:'🚜', fisherman:'🎣',
-      weaver:'🧵', artisan:'🔨', self_employed:'🛒', street_vendor:'🛍️',
-      daily_wage:'👷', construction_worker:'🧱', domestic_worker:'🏠',
-      small_trader:'🏪', student:'📚', homemaker:'👪', unemployed:'🔍', other:'💼',
+      farmer:'🌾', marginal_farmer:'🌱', farm_laborer:'🔨', fisherman:'🐟',
+      weaver:'🧵', artisan:'🔧', self_employed:'💼', street_vendor:'🛒',
+      daily_wage:'👷', construction_worker:'🏗️', domestic_worker:'🏠',
+      small_trader:'🏪', student:'📚', homemaker:'👩‍🍳', unemployed:'❌', other:'💼',
     };
     return (
       <div className="grid grid-cols-2 gap-3">
@@ -604,7 +606,7 @@ function StepInput({ step, val, options, profile, onChange, yes, no, qData }: SI
 
   if (step.type === 'goal_select') {
     const GOALI: Record<string, string> = {
-      farming:'🌾', housing:'🏠', health:'🏥', education:'📚',
+      farming:'🌾', housing:'🏠', health:'❤️', education:'📚',
       employment:'💼', insurance:'🛡️', pension:'👴', business:'🏪',
       daughter:'👧', loan:'💳', savings:'💰', other:'⭐',
     };
@@ -624,15 +626,22 @@ function StepInput({ step, val, options, profile, onChange, yes, no, qData }: SI
   }
 
   if (step.type === 'urgency_scale') {
-    const UCOLS = ['bg-green-100 border-green-400','bg-lime-100 border-lime-400','bg-yellow-100 border-yellow-400','bg-orange-100 border-orange-400','bg-red-100 border-red-400'];
+    const UCOLS = [
+      'bg-green-100 border-green-400',
+      'bg-lime-100 border-lime-400',
+      'bg-yellow-100 border-yellow-400',
+      'bg-orange-100 border-orange-400',
+      'bg-red-100 border-red-400',
+    ];
+    const UEMOJI = ['😌','🙂','😐','😟','🚨'];
     return (
       <div className="space-y-3">
         {Object.entries(options).map(([v, label], i) => (
           <button key={v}
             onClick={() => onChange(id, v)}
-            className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${UCOLS[i]} ${val === v ? 'ring-2 ring-primary' : ''}`}
+            className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${UCOLS[i] || UCOLS[2]} ${val === v ? 'ring-2 ring-primary' : ''}`}
           >
-            <span className="text-3xl">{['😌','🙁','😟','😰','🚨'][i]}</span>
+            <span className="text-3xl">{UEMOJI[i] || '😐'}</span>
             <span className="text-base font-medium text-gray-900">{label}</span>
           </button>
         ))}
@@ -643,16 +652,19 @@ function StepInput({ step, val, options, profile, onChange, yes, no, qData }: SI
   if (step.type === 'choice') {
     const DISI: Record<string, string> = {
       visual:'👁️', hearing:'👂', locomotor:'🦽', mental_illness:'🧠',
-      intellectual:'📖', multiple:'➕', other:'❓',
+      intellectual:'💡', multiple:'♾️', other:'❓',
     };
     const EDUI: Record<string, string> = {
-      primary:'🔢', middle:'📖', matriculation:'📗', higher_secondary:'📘',
-      graduate:'🎓', postgraduate:'🏅',
+      primary:'✏️', middle:'📖', matriculation:'📝', higher_secondary:'📗',
+      graduate:'🎓', postgraduate:'🏛️',
+    };
+    const GENI: Record<string, string> = {
+      male:'👨', female:'👩', transgender:'🏳️‍🌈', prefer_not_to_say:'🔒',
     };
     const icon = (v: string) => {
       if (id === 'disability_type') return DISI[v] || '❓';
       if (id === 'education_level')  return EDUI[v] || '📚';
-      return { male:'👨', female:'👩', transgender:'🏳️‍⚧️', prefer_not_to_say:'🔒' }[v] || '•';
+      return GENI[v] || '•';
     };
     return (
       <div className="space-y-3">

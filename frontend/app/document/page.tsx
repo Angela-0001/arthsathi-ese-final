@@ -1,13 +1,10 @@
-'use client';
-/**
- * ArthSathi — Document Safety Checker (Phase 4)
- * Camera → OCR (Tesseract) → Risk analysis → Plain-language summary → TTS → Q&A
- */
-
+﻿'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { getApiUrl } from '@/lib/config';
 import { useRouter } from 'next/navigation';
+import { t, initLanguage } from '@/i18n';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API = getApiUrl();
 
 type ProcessingStatus = 'idle' | 'uploading' | 'processing' | 'ready' | 'error';
 
@@ -53,6 +50,8 @@ export default function DocumentPage() {
   const [lang]                    = useState(() =>
     typeof window !== 'undefined' ? (localStorage.getItem('arthsathi_lang') || 'hi') : 'hi'
   );
+
+  useEffect(() => { initLanguage(); }, []);
 
   const handleFile = useCallback(async (file: File) => {
     setError(null);
@@ -134,8 +133,8 @@ export default function DocumentPage() {
           </svg>
           Back
         </button>
-        <h1 className="text-3xl font-bold mb-2">📄 Document Checker</h1>
-        <p className="text-white/90 text-base">Upload any agreement — we'll explain it in plain language</p>
+        <h1 className="text-3xl font-bold mb-2">📄 {t('doc.title') || 'Document Checker'}</h1>
+        <p className="text-white/90 text-base">{t('doc.subtitle') || 'Upload any agreement — we will explain it in plain language'}</p>
       </div>
 
       <div className="flex-1 px-4 py-6 max-w-4xl mx-auto w-full">
@@ -148,16 +147,16 @@ export default function DocumentPage() {
               <button onClick={() => cameraRef.current?.click()}
                 className="w-full btn-primary bg-primary hover:bg-primary-dark flex items-center justify-center gap-3 py-6 text-lg">
                 <span className="text-4xl">📷</span>
-                <span>Take a Photo</span>
+                <span>{t('doc.take_photo') || 'Take a Photo'}</span>
               </button>
               <input ref={cameraRef} type="file" accept="image/*" capture="environment"
                 className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
 
               <button onClick={() => fileRef.current?.click()} className="w-full btn-secondary flex items-center justify-center gap-3 py-6 text-lg">
                 <span className="text-4xl">📁</span>
-                <span>Upload from Gallery</span>
+                <span>{t('doc.upload') || 'Upload Image'}</span>
               </button>
-              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp"
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/bmp"
                 className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
             </div>
 
@@ -165,7 +164,7 @@ export default function DocumentPage() {
             <div className="bg-white rounded-2xl border-2 border-green-200 p-6 shadow-sm">
               <h3 className="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
                 <span>📋</span>
-                Tips for Best Results
+                {t('doc.tips_title') || 'Tips for Best Results'}
               </h3>
               <ul className="space-y-3 text-sm text-gray-700">
                 <li className="flex items-start gap-2">
@@ -195,9 +194,9 @@ export default function DocumentPage() {
             {preview && <img src={preview} alt="document" className="max-h-40 mx-auto rounded-2xl shadow mb-5 object-contain" />}
             <div className="text-6xl mb-4 voice-recording">{status === 'uploading' ? '📤' : '🔍'}</div>
             <p className="text-xl font-semibold text-gray-800">
-              {status === 'uploading' ? 'Uploading...' : 'Reading your document...'}
+              {status === 'uploading' ? (t('doc.uploading') || 'Uploading...') : (t('doc.processing') || 'Reading your document...')}
             </p>
-            <p className="text-gray-500 text-sm mt-2">This may take 30–60 seconds</p>
+          <p className="text-gray-500 text-sm mt-2">{t('doc.time_note') || 'This may take 30–60 seconds'}</p>
           </div>
         )}
 
@@ -227,10 +226,10 @@ export default function DocumentPage() {
                 <div className="flex-1">
                   <p className="font-bold text-xl mb-1">
                     {riskLevel === 'high' || riskLevel === 'critical'
-                      ? 'HIGH RISK — Read carefully before signing'
+                      ? (t('doc.high_risk') || 'HIGH RISK — Read carefully before signing')
                       : riskLevel === 'medium'
-                      ? 'SOME RISKS — Check these points'
-                      : 'LOW RISK — Looks mostly okay'}
+                      ? (t('doc.medium_risk') || 'MEDIUM RISK — Check these points')
+                      : (t('doc.no_risk') || 'LOW RISK — Looks mostly okay')}
                   </p>
                   {result.ocr_confidence > 0 && (
                     <p className="text-sm opacity-70">
@@ -246,7 +245,7 @@ export default function DocumentPage() {
             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
               <h2 className="font-bold text-gray-900 text-xl mb-4 flex items-center gap-2">
                 <span>📝</span>
-                What This Document Says
+                {t('doc.what_it_says') || 'What This Document Says'}
               </h2>
               <p className="text-gray-700 text-base whitespace-pre-wrap leading-relaxed">
                 {result.summary_text || 'Could not generate summary. Please ensure the image is clear.'}
@@ -258,7 +257,7 @@ export default function DocumentPage() {
               <div className="bg-white rounded-2xl border-2 border-red-200 p-6 shadow-sm">
                 <h2 className="font-bold text-red-800 text-xl mb-4 flex items-center gap-2">
                   <span>⚠️</span>
-                  Important Points to Check ({result.risk_flags.length})
+                  {t('doc.important_points') || 'Important Points to Check'} ({result.risk_flags.length})
                 </h2>
                 <div className="space-y-3">
                   {result.risk_flags.map((f, idx) => (
@@ -283,7 +282,7 @@ export default function DocumentPage() {
               <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
                 <h2 className="font-bold text-gray-800 text-xl mb-4 flex items-center gap-2">
                   <span>💬</span>
-                  Questions & Answers
+                  {t('doc.important_points') || 'Questions & Answers'}
                 </h2>
                 <div className="space-y-3">
                   {qaHistory.map((m, i) => (
@@ -302,7 +301,7 @@ export default function DocumentPage() {
             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
               <h2 className="font-bold text-gray-800 text-xl mb-3 flex items-center gap-2">
                 <span>❓</span>
-                Ask About This Document
+                {t('doc.ask_title') || 'Ask About This Document'}
               </h2>
               <p className="text-xs text-gray-500 mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
                 ℹ️ This is not legal advice. For important decisions, consult NALSA/DLSA Legal Aid (helpline: 15100)
@@ -310,17 +309,17 @@ export default function DocumentPage() {
               <div className="flex gap-3">
                 <input type="text" className="form-input flex-1"
                   value={question} onChange={e => setQuestion(e.target.value)}
-                  placeholder="E.g., What is the interest rate?"
+                  placeholder={t('doc.ask_placeholder') || 'E.g., What is the interest rate?'}
                   onKeyDown={e => e.key === 'Enter' && askQuestion()} />
                 <button onClick={askQuestion} disabled={askingQ || !question.trim()}
                   className="btn-primary flex-shrink-0 px-6 py-3 font-semibold">
-                  {askingQ ? '...' : 'Ask →'}
+                  {askingQ ? '...' : (t('doc.ask_btn') || 'Ask →')}
                 </button>
               </div>
             </div>
 
             <button className="btn-secondary w-full py-4 text-lg font-semibold" onClick={reset}>
-              📷 Check Another Document
+              📷 {t('doc.check_another') || 'Check Another Document'}
             </button>
           </div>
         )}

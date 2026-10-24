@@ -1,32 +1,56 @@
 /**
- * ArthSathi — Unified i18n engine
- *
- * Loads questions + UI strings from the shared i18n/ folder.
- * In the browser, files are fetched lazily from /api/i18n/:lang.
- * This module also handles the language → locale mapping for TTS/STT.
+ * ArthSathi — lib/i18n.ts
+ * Re-exports from @/i18n (single source of truth) and adds
+ * loadQuestions / get helpers used by the onboarding page.
+ * Languages: Hindi (hi), Marathi (mr), English (en) only.
  */
 
-export type LangCode = 'hi' | 'mr' | 'ta' | 'te' | 'bn' | 'en';
+// Re-export everything from the canonical i18n module
+export type { LanguageCode } from '@/i18n';
+export { LANGUAGES, t, setLanguage, initLanguage, currentLanguage } from '@/i18n';
 
-export const LANGUAGES: Record<LangCode, { name: string; native: string; ttsLocale: string; whisperCode: string }> = {
-  hi: { name: 'Hindi',   native: 'हिंदी',    ttsLocale: 'hi-IN', whisperCode: 'hi' },
-  mr: { name: 'Marathi', native: 'मराठी',    ttsLocale: 'mr-IN', whisperCode: 'mr' },
-  ta: { name: 'Tamil',   native: 'தமிழ்',    ttsLocale: 'ta-IN', whisperCode: 'ta' },
-  te: { name: 'Telugu',  native: 'తెలుగు',   ttsLocale: 'te-IN', whisperCode: 'te' },
-  bn: { name: 'Bengali', native: 'বাংলা',    ttsLocale: 'bn-IN', whisperCode: 'bn' },
-  en: { name: 'English', native: 'English',   ttsLocale: 'en-IN', whisperCode: 'en' },
-};
+// LangCode is an alias so onboarding doesn't need to change its import name
+export type LangCode = 'hi' | 'mr' | 'en';
 
-// In-memory cache of loaded translations
+// Consistent localStorage key (must match i18n/index.ts)
+const LANG_KEY = 'arthsathi_lang';
+const MODE_KEY = 'arthsathi_mode';
+
+/** Persist chosen language */
+export function setLanguageLib(lang: LangCode) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(LANG_KEY, lang);
+  document.documentElement.lang = lang;
+}
+
+/** Read persisted language */
+export function getSavedLanguage(): LangCode {
+  if (typeof window === 'undefined') return 'hi';
+  return (localStorage.getItem(LANG_KEY) as LangCode) || 'hi';
+}
+
+/** Persist interaction mode */
+export function setMode(mode: 'text' | 'voice') {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(MODE_KEY, mode);
+}
+
+/** Read persisted interaction mode (supports both old and new keys) */
+export function getSavedMode(): 'text' | 'voice' {
+  if (typeof window === 'undefined') return 'voice';
+  const v = localStorage.getItem(MODE_KEY) || localStorage.getItem('as_mode');
+  return (v as 'text' | 'voice') || 'voice';
+}
+
+// In-memory cache of loaded question translations
 const cache: Record<string, Record<string, unknown>> = {};
 
 /**
- * Load question translations for a language.
- * Returns the questions JSON for that language, falling back to English.
+ * Load question translations for a language from the backend API.
+ * Falls back to English if the requested language is unavailable.
  */
 export async function loadQuestions(lang: LangCode): Promise<Record<string, unknown>> {
   if (cache[lang]) return cache[lang];
-
   try {
     const res = await fetch(`/api/i18n/${lang}/questions`);
     if (res.ok) {
@@ -35,8 +59,6 @@ export async function loadQuestions(lang: LangCode): Promise<Record<string, unkn
       return data;
     }
   } catch { /* fallback */ }
-
-  // Fallback: load English
   if (lang !== 'en') return loadQuestions('en');
   return {};
 }
@@ -56,7 +78,7 @@ export function get(
     if (curr && typeof curr === 'object' && p in (curr as Record<string, unknown>)) {
       curr = (curr as Record<string, unknown>)[p];
     } else {
-      return path; // return key if not found
+      return path;
     }
   }
   let text = typeof curr === 'string' ? curr : path;
@@ -66,28 +88,4 @@ export function get(
     }
   }
   return text;
-}
-
-/** Persist chosen language to localStorage and document */
-export function setLanguage(lang: LangCode) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('as_lang', lang);
-  document.documentElement.lang = lang;
-}
-
-/** Read persisted language */
-export function getSavedLanguage(): LangCode {
-  if (typeof window === 'undefined') return 'hi';
-  return (localStorage.getItem('as_lang') as LangCode) || 'hi';
-}
-
-/** Persist interaction mode */
-export function setMode(mode: 'text' | 'voice') {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('as_mode', mode);
-}
-
-export function getSavedMode(): 'text' | 'voice' {
-  if (typeof window === 'undefined') return 'voice';
-  return (localStorage.getItem('as_mode') as 'text' | 'voice') || 'voice';
 }

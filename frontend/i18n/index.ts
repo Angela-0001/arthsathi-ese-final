@@ -15,24 +15,18 @@
 
 import hi from './hi';
 import mr from './mr';
-import ta from './ta';
-import te from './te';
-import bn from './bn';
 import en from './en';
 
-export type LanguageCode = 'hi' | 'mr' | 'ta' | 'te' | 'bn' | 'en';
+export type LanguageCode = 'hi' | 'mr' | 'en';
 
 // Registry of all supported languages. Add a new entry to support a new language.
 export const LANGUAGES: Record<LanguageCode, { name: string; nativeName: string; rtl: boolean }> = {
-  hi: { name: 'Hindi',   nativeName: 'हिंदी',       rtl: false },
-  mr: { name: 'Marathi', nativeName: 'मराठी',       rtl: false },
-  ta: { name: 'Tamil',   nativeName: 'தமிழ்',       rtl: false },
-  te: { name: 'Telugu',  nativeName: 'తెలుగు',      rtl: false },
-  bn: { name: 'Bengali', nativeName: 'বাংলা',       rtl: false },
-  en: { name: 'English', nativeName: 'English',      rtl: false },
+  hi: { name: 'Hindi',   nativeName: 'हिंदी',  rtl: false },
+  mr: { name: 'Marathi', nativeName: 'मराठी',  rtl: false },
+  en: { name: 'English', nativeName: 'English', rtl: false },
 };
 
-const translations: Record<LanguageCode, Record<string, string>> = { hi, mr, ta, te, bn, en };
+const translations: Record<LanguageCode, Record<string, string>> = { hi, mr, en };
 
 // Current active language (read from localStorage on client, default: 'hi')
 let _currentLang: LanguageCode = 'hi';

@@ -6,8 +6,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { t, initLanguage } from '@/i18n';
 
 interface Channel {
   id: string;
@@ -22,6 +23,7 @@ interface Channel {
 
 export default function ChannelsPage() {
   const [copiedIVR, setCopiedIVR] = useState(false);
+  useEffect(() => { initLanguage(); }, []);
 
   function handleCopyIVR() {
     navigator.clipboard.writeText('02248963501').then(() => {
@@ -36,13 +38,13 @@ export default function ChannelsPage() {
       icon: '📞',
       title: 'IVR (Phone Call)',
       subtitle: 'Call: 02248963501',
-      description: 'Call and get scheme info in Hindi, English or Marathi',
+      description: 'Call and get scheme info in Hindi, Marathi or English',
       color: 'bg-orange-50 border-orange-200',
       howToUse: 'Dial 02248963501. Choose your language. Ask about schemes or insurance by speaking naturally.',
       action: (
         <button
           onClick={handleCopyIVR}
-          className="mt-3 px-4 py-2 text-sm rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors"
+          className="mt-3 px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary-dark transition-colors"
         >
           {copiedIVR ? '✅ Copied!' : 'Copy Number'}
         </button>
@@ -61,7 +63,7 @@ export default function ChannelsPage() {
           href="https://wa.me/14155238886"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block mt-3 px-4 py-2 text-sm rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors"
+          className="inline-block mt-3 px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary-dark transition-colors"
         >
           Open WhatsApp
         </a>
@@ -80,7 +82,7 @@ export default function ChannelsPage() {
           href="https://t.me/arthsathi_demo_bot"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block mt-3 px-4 py-2 text-sm rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors"
+          className="inline-block mt-3 px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary-dark transition-colors"
         >
           Open Telegram
         </a>
@@ -100,8 +102,8 @@ export default function ChannelsPage() {
           ← Back
         </Link>
         <div className="text-white">
-          <h1 className="text-2xl font-bold">Connect With ArthSathi</h1>
-          <p className="text-white/80 text-sm">Choose your preferred channel</p>
+          <h1 className="text-2xl font-bold">{t('connect.title') || 'Connect With ArthSathi'}</h1>
+          <p className="text-white/80 text-sm">{t('connect.subtitle') || 'Choose your preferred channel'}</p>
         </div>
       </header>
 

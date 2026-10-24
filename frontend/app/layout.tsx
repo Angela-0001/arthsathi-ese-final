@@ -11,6 +11,7 @@
 
 import type { Metadata, Viewport } from 'next';
 import { Noto_Sans } from 'next/font/google';
+import { getApiUrl } from '@/lib/config';
 import '../styles/globals.css';
 import OfflineBanner from '../components/ui/OfflineBanner';
 import LanguageInitializer from '../components/LanguageInitializer';
@@ -62,7 +63,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         {/* Preconnect to own API server for first-contentful-paint speed */}
-        <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'} />
+        <link rel="preconnect" href={getApiUrl()} />
       </head>
       <body className="bg-surface min-h-screen">
         <LanguageInitializer />

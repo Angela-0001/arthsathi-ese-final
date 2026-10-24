@@ -93,48 +93,42 @@ function processDocument(imagePath, language = 'en', question = null) {
  * @param {string} language  — language code
  */
 function answerFromText(text, question, language = 'en') {
-  return new Promise((resolve, reject) => {
-    const args = [
-      OCR_SCRIPT,
-      '--image',    '/dev/null', // placeholder — script won't OCR when question-only
-      '--language', language,
-      '--question', question,
-    ];
-
-    // Write text to a temp file and pass via env
-    const fs   = require('fs');
+  return new Promise((resolve) => {
     const os   = require('os');
-    const tmp  = require('path').join(os.tmpdir(), `as_text_${Date.now()}.txt`);
+    const tmp  = path.join(os.tmpdir(), `as_text_${Date.now()}.txt`);
     fs.writeFileSync(tmp, text, 'utf8');
+
+    // Write a minimal Python script that answers the question from the text file
+    const miniScript = `
+import os, sys, json, traceback
+sys.path.insert(0, r'${path.join(__dirname, '../../../ml-model').replace(/\\/g, '\\\\')}')
+try:
+    from ocr_processor import answer_question_ollama, answer_question_rule_based
+    text = open(os.environ['AS_TEXT_FILE'], encoding='utf-8').read()
+    question = sys.argv[1]
+    lang = sys.argv[2] if len(sys.argv) > 2 else 'en'
+    answer = answer_question_ollama(text, question, lang) or answer_question_rule_based(text, question)
+    print(json.dumps({"answer": answer}))
+except Exception as e:
+    print(json.dumps({"answer": "Could not answer: " + str(e)}))
+`.trim();
+
+    const tmpScript = path.join(require('os').tmpdir(), `as_qa_${Date.now()}.py`);
+    fs.writeFileSync(tmpScript, miniScript, 'utf8');
 
     const env = {
       ...process.env,
       AS_TEXT_FILE:  tmp,
-      TESSERACT_CMD: process.env.TESSERACT_CMD || 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe',
+      TESSERACT_CMD: process.env.TESSERACT_CMD || 'tesseract',
       OLLAMA_HOST:   process.env.OLLAMA_HOST   || 'http://localhost:11434',
       OLLAMA_MODEL:  process.env.OLLAMA_MODEL  || 'mistral',
     };
-
-    // Build a minimal script that just calls answer_question_ollama on text from env
-    const miniScript = `
-import os, sys, json
-sys.path.insert(0, r'${path.join(__dirname, '../../../ml-model')}')
-from ocr_processor import answer_question_ollama, answer_question_rule_based
-text = open(os.environ['AS_TEXT_FILE'], encoding='utf-8').read()
-question = sys.argv[1]
-lang = sys.argv[2] if len(sys.argv) > 2 else 'en'
-answer = answer_question_ollama(text, question, lang) or answer_question_rule_based(text, question)
-print(json.dumps({"answer": answer}))
-`.trim();
-
-    const tmpScript = require('path').join(require('os').tmpdir(), `as_qa_${Date.now()}.py`);
-    fs.writeFileSync(tmpScript, miniScript, 'utf8');
 
     const proc = spawn(PYTHON_BIN, [tmpScript, question, language], { env });
     let out = '', err = '';
     proc.stdout.on('data', c => out += c);
     proc.stderr.on('data', c => err += c);
-    proc.on('close', (code) => {
+    proc.on('close', () => {
       fs.unlink(tmp,       () => {});
       fs.unlink(tmpScript, () => {});
       try {
@@ -145,8 +139,15 @@ print(json.dumps({"answer": answer}))
       }
     });
     proc.on('error', () => {
+      fs.unlink(tmp,       () => {});
+      fs.unlink(tmpScript, () => {});
       resolve('Answer service temporarily unavailable.');
     });
+
+    setTimeout(() => {
+      proc.kill();
+      resolve('Request timed out.');
+    }, 60_000);
   });
 }
 

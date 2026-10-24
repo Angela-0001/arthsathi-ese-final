@@ -17,6 +17,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { getApiUrl } from '@/lib/config';
 import { t } from '../../i18n';
 
 interface VoiceButtonProps {
@@ -27,7 +28,7 @@ interface VoiceButtonProps {
   className?: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = getApiUrl();
 
 export default function VoiceButton({
   language = 'hi',

@@ -24,17 +24,37 @@ function getBot() {
   return bot;
 }
 
-// ─── Language detection ───────────────────────────────────────────────────────
+// ─── Language detection (hi, mr, en only) ────────────────────────────────────
 function detectLanguage(text) {
   if (!text) return 'en';
-  // Simple Unicode-range detection
   const devanagari = /[\u0900-\u097F]/;
   if (devanagari.test(text)) {
-    // Distinguish Marathi from Hindi by common Marathi words
     const marathiWords = /आहे|आहेत|मला|तुम्ही|नाही|कृपया|विचारा|सांगा/;
     return marathiWords.test(text) ? 'mr' : 'hi';
   }
   return 'en';
+}
+
+// ─── Fetch schemes: personalized if user found, generic fallback ─────────────
+async function fetchSchemesForUser(telegramId, lang, limit = 5) {
+  // Only try personalized recs if Groq is configured
+  if (process.env.GROQ_API_KEY) {
+    try {
+      const userResult = await query(
+        'SELECT id, age, occupation, state FROM users WHERE telegram_id = $1',
+        [String(telegramId)]
+      );
+      if (userResult.rows.length > 0 && userResult.rows[0].occupation) {
+        const userId = userResult.rows[0].id;
+        const { getRelevantSchemes } = require('../services/groqRecommendation');
+        return await getRelevantSchemes(userId, limit);
+      }
+    } catch (e) {
+      console.warn('[Telegram] Personalized recs error:', e.message);
+    }
+  }
+  // Generic fallback
+  return fetchTopSchemes(lang, limit);
 }
 
 // ─── Fetch top schemes from DB ────────────────────────────────────────────────
@@ -63,11 +83,15 @@ function formatSchemes(schemes, lang) {
   }
   return schemes
     .map((s, i) => {
-      const name = (s.name && (s.name[lang] || s.name.en || s.name.hi)) || s.name || 'Scheme';
-      const desc = (s.description && (s.description[lang] || s.description.en || s.description.hi)) || '';
+      const name = typeof s.name === 'object' && s.name !== null
+        ? (s.name[lang] || s.name.en || s.name.hi || Object.values(s.name)[0] || 'Scheme')
+        : (s.name || 'Scheme');
+      const desc = typeof s.description === 'object' && s.description !== null
+        ? (s.description[lang] || s.description.en || s.description.hi || '')
+        : (s.description || '');
       const benefit = s.benefit_amount_max ? ` | Max: ₹${s.benefit_amount_max}` : '';
       const url = s.application_url ? `\n🔗 ${s.application_url}` : '';
-      return `${i + 1}. *${name}*\n${desc.slice(0, 120)}...${benefit}${url}`;
+      return `${i + 1}. *${name}*${benefit}\n${desc.slice(0, 200)}${url}`;
     })
     .join('\n\n');
 }
@@ -102,7 +126,8 @@ function setupHandlers(b) {
   });
 
   b.command('schemes', async (ctx) => {
-    const schemes = await fetchTopSchemes('en', 5);
+    const telegramId = ctx.from?.id;
+    const schemes = await fetchSchemesForUser(telegramId, 'en', 5);
     const msg = formatSchemes(schemes, 'en');
     ctx.reply('🏛️ *Top Government Schemes*\n\n' + msg, { parse_mode: 'Markdown' });
   });
@@ -120,14 +145,15 @@ function setupHandlers(b) {
 
   // Catch-all text handler
   b.on('text', async (ctx) => {
-    const text = ctx.message.text;
-    const lang = detectLanguage(text);
+    const text     = ctx.message.text;
+    const lang     = detectLanguage(text);
+    const telegramId = ctx.from?.id;
 
     const thinking = { hi: '⏳ खोज रहा हूं...', mr: '⏳ शोधत आहे...', en: '⏳ Searching...' };
     await ctx.reply(thinking[lang] || thinking.en);
 
-    const schemes = await fetchTopSchemes(lang, 5);
-    const msg = formatSchemes(schemes, lang);
+    const schemes = await fetchSchemesForUser(telegramId, lang, 5);
+    const msg     = formatSchemes(schemes, lang);
 
     const header = {
       hi: '📋 *प्रासंगिक सरकारी योजनाएं:*',

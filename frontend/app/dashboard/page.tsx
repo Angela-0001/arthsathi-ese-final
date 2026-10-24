@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
-import { t } from '@/i18n';
+import { t, initLanguage } from '@/i18n';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [showIVRModal, setShowIVRModal] = useState(false);
 
   useEffect(() => {
+    initLanguage();
     // Guard: redirect to auth if not logged in
     const userId = localStorage.getItem('as_user_id');
     if (!userId) {
@@ -56,32 +57,40 @@ export default function DashboardPage() {
   const actionCards = [
     {
       icon: '🎯',
-      title: 'Check My Eligibility',
-      desc: 'Answer questions to find schemes you qualify for',
+      title: t('dashboard.check_eligibility') || 'Check My Eligibility',
+      desc: t('dashboard.eligibility_desc') || 'Answer questions to find schemes you qualify for',
       href: '/onboarding',
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
     },
     {
       icon: '🌾',
-      title: 'My Recommended Schemes',
-      desc: 'View schemes matched to your profile',
+      title: t('dashboard.my_schemes') || 'My Recommended Schemes',
+      desc: t('dashboard.schemes_desc') || 'View schemes matched to your profile',
       href: '/results',
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200',
     },
     {
       icon: '📄',
-      title: 'Document Checker',
-      desc: 'Understand any agreement before you sign',
+      title: t('dashboard.documents') || 'Document Checker',
+      desc: t('dashboard.doc_desc') || 'Understand any agreement before you sign',
       href: '/document',
       bgColor: 'bg-amber-50',
       borderColor: 'border-amber-200',
     },
     {
+      icon: '📊',
+      title: t('dashboard.roadmap') || 'Financial Roadmap',
+      desc: t('dashboard.roadmap_desc') || 'Get a personalized money plan based on your profile',
+      href: '/roadmap',
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-200',
+    },
+    {
       icon: '💬',
-      title: 'Connect on WhatsApp',
-      desc: 'Chat with us anytime for help',
+      title: t('home.whatsapp') || 'Connect on WhatsApp',
+      desc: t('dashboard.whatsapp_desc') || 'Chat with us anytime for help',
       href: `https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`,
       external: true,
       bgColor: 'bg-green-50',
@@ -89,8 +98,8 @@ export default function DashboardPage() {
     },
     {
       icon: '📱',
-      title: 'Connect on Telegram',
-      desc: 'Message our bot for quick answers',
+      title: t('home.telegram') || 'Connect on Telegram',
+      desc: t('dashboard.telegram_desc') || 'Message our bot for quick answers',
       href: `https://t.me/${TELEGRAM}`,
       external: true,
       bgColor: 'bg-blue-50',
@@ -98,8 +107,8 @@ export default function DashboardPage() {
     },
     {
       icon: '📞',
-      title: 'Call Us (IVR)',
-      desc: 'Get scheme info by phone in your language',
+      title: t('home.call') || 'Call Us (IVR)',
+      desc: t('dashboard.ivr_desc') || 'Get scheme info by phone in your language',
       onClick: () => setShowIVRModal(true),
       bgColor: 'bg-orange-50',
       borderColor: 'border-orange-200',
@@ -112,10 +121,10 @@ export default function DashboardPage() {
         {/* Welcome Header */}
         <div className="mb-12 text-center md:text-left">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-            {userName ? `Welcome, ${userName}!` : 'Welcome to ArthSathi!'}
+            {userName ? `${t('nav.profile') || 'Welcome'}, ${userName}!` : `${t('dashboard.welcome') || 'Welcome to ArthSathi!'}`}
           </h1>
           <p className="text-xl text-gray-600">
-            Choose what you'd like to do today
+            {t('home.connect_sub') || 'Choose what you\'d like to do today'}
           </p>
         </div>
 
@@ -170,9 +179,9 @@ export default function DashboardPage() {
         {/* Quick Info Section */}
         <div className="mt-16 text-center">
           <Card padding="lg" className="bg-white border-2 border-primary/20">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">Need Help?</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t('dashboard.help') || 'Need Help?'}</h3>
             <p className="text-base text-gray-600 mb-6">
-              ArthSathi is free and available 24/7. Choose your preferred way to connect with us.
+              {t('home.connect_sub') || 'ArthSathi is free and available 24/7. Choose your preferred way to connect with us.'}
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <a
@@ -211,15 +220,16 @@ export default function DashboardPage() {
       >
         <div className="text-center">
           <div className="text-6xl mb-4">📞</div>
-          <p className="text-xl font-bold text-gray-900 mb-2">Call: {IVR_NUMBER}</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            {t('ivr.call_now') || 'Call'} {IVR_NUMBER}
+          </h2>
           <p className="text-base text-gray-600 mb-6">
-            Our IVR system is available 24/7 in 6 languages. Call and follow these steps:
+            {t('ivr.subtitle') || 'Our IVR system is available 24/7 in 3 languages. Call and follow these steps:'}
           </p>
           <ol className="text-left text-base text-gray-700 space-y-2 mb-6 max-w-md mx-auto">
-            <li>1. Choose your language (1-6)</li>
-            <li>2. Answer questions using your phone keypad</li>
-            <li>3. Listen to scheme recommendations</li>
-            <li>4. Get details via SMS</li>
+            <li>1. {t('ivr.step_1_desc') || 'Choose your language (1-3)'}</li>
+            <li>2. {t('ivr.step_2_desc') || 'Answer questions using your phone keypad'}</li>
+            <li>3. {t('ivr.step_3_desc') || 'Listen to scheme recommendations'}</li>
           </ol>
           <a
             href={`tel:${IVR_NUMBER}`}

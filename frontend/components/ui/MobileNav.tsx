@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ArthSathi — Mobile Navigation Component
  *
  * Hamburger menu + bottom tab bar for mobile devices
@@ -39,10 +39,11 @@ export default function MobileNav() {
   const isActive = (path: string) => pathname === path;
 
   const navLinks = [
-    { href: '/', label: t('nav.home'), icon: '🏠', key: 'home' },
-    { href: '/onboarding', label: t('nav.eligibility'), icon: '✅', key: 'eligibility' },
-    { href: '/document', label: t('nav.documents'), icon: '📄', key: 'documents' },
-    { href: '/channels', label: t('nav.connect'), icon: '💬', key: 'connect' },
+    { href: '/',           label: t('nav.home')      || 'Home',    icon: '🏠', key: 'home' },
+    { href: '/results',    label: t('nav.mySchemes') || 'Schemes', icon: '🌾', key: 'schemes' },
+    { href: '/document',   label: t('nav.documents') || 'Analyse', icon: '📄', key: 'analyse' },
+    { href: '/channels',   label: t('nav.connect')   || 'Connect', icon: '💬', key: 'connect' },
+    { href: '/roadmap',    label: t('nav.roadmap')   || 'Roadmap', icon: '📊', key: 'roadmap' },
   ];
 
   return (
@@ -141,14 +142,7 @@ export default function MobileNav() {
                   </Link>
                 ))}
 
-                {/* IVR Call */}
-                <a
-                  href={`tel:${process.env.NEXT_PUBLIC_IVR_NUMBER || '+911234567890'}`}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  <span className="text-2xl">📞</span>
-                  <span>{t('nav.callUs')}</span>
-                </a>
+
               </nav>
 
               {/* Divider */}
@@ -189,47 +183,20 @@ export default function MobileNav() {
       {/* Bottom Tab Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40 safe-padding">
         <div className="flex items-center justify-around px-2 py-2">
-          {navLinks.slice(0, 4).map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.key}
               href={link.href}
-              className={`flex flex-col items-center justify-center min-w-[60px] py-2 px-3 rounded-xl transition-colors ${
+              className={`flex flex-col items-center justify-center min-w-[56px] py-2 px-1 rounded-xl transition-colors ${
                 isActive(link.href)
                   ? 'text-primary bg-primary/10'
                   : 'text-gray-600 hover:text-primary'
               }`}
             >
-              <span className="text-2xl mb-1">{link.icon}</span>
-              <span className="text-xs font-medium">{link.label}</span>
+              <span className="text-xl mb-0.5">{link.icon}</span>
+              <span className="text-[10px] font-medium leading-tight text-center">{link.label}</span>
             </Link>
           ))}
-          
-          {/* Profile/Login */}
-          {userId ? (
-            <Link
-              href="/results"
-              className={`flex flex-col items-center justify-center min-w-[60px] py-2 px-3 rounded-xl transition-colors ${
-                isActive('/results')
-                  ? 'text-primary bg-primary/10'
-                  : 'text-gray-600 hover:text-primary'
-              }`}
-            >
-              <span className="text-2xl mb-1">👤</span>
-              <span className="text-xs font-medium">{t('nav.profile')}</span>
-            </Link>
-          ) : (
-            <Link
-              href="/auth"
-              className={`flex flex-col items-center justify-center min-w-[60px] py-2 px-3 rounded-xl transition-colors ${
-                isActive('/auth')
-                  ? 'text-primary bg-primary/10'
-                  : 'text-gray-600 hover:text-primary'
-              }`}
-            >
-              <span className="text-2xl mb-1">🔐</span>
-              <span className="text-xs font-medium">{t('nav.login')}</span>
-            </Link>
-          )}
         </div>
       </div>
     </>

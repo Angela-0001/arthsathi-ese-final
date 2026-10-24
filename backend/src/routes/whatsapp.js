@@ -14,7 +14,7 @@ const twilio  = require('twilio');
 const { query } = require('../db');
 const router  = express.Router();
 
-// ─── Language detection (same heuristic as Telegram) ─────────────────────────
+// ─── Language detection (hi, mr, en only) ────────────────────────────────────
 function detectLanguage(text) {
   if (!text) return 'en';
   const devanagari = /[\u0900-\u097F]/;
@@ -23,6 +23,26 @@ function detectLanguage(text) {
     return marathiWords.test(text) ? 'mr' : 'hi';
   }
   return 'en';
+}
+
+// ─── Fetch schemes: personalized if user found, generic fallback ─────────────
+async function fetchSchemesForUser(whatsappFrom, limit = 3) {
+  if (process.env.GROQ_API_KEY) {
+    try {
+      const rawPhone = whatsappFrom.replace(/^whatsapp:\+?/, '').replace(/\D/g, '').slice(-10);
+      const userResult = await query(
+        'SELECT id, occupation FROM users WHERE phone = $1 OR whatsapp_number LIKE $2',
+        [rawPhone, `%${rawPhone}`]
+      );
+      if (userResult.rows.length > 0 && userResult.rows[0].occupation) {
+        const { getRelevantSchemes } = require('../services/groqRecommendation');
+        return await getRelevantSchemes(userResult.rows[0].id, limit);
+      }
+    } catch (e) {
+      console.warn('[WhatsApp] Personalized recs error:', e.message);
+    }
+  }
+  return fetchTopSchemes(limit);
 }
 
 // ─── Fetch top schemes from DB ────────────────────────────────────────────────
@@ -51,11 +71,15 @@ function formatSchemes(schemes, lang) {
   }
   return schemes
     .map((s, i) => {
-      const name = (s.name && (s.name[lang] || s.name.en || s.name.hi)) || s.name || 'Scheme';
-      const desc = (s.description && (s.description[lang] || s.description.en || s.description.hi)) || '';
+      const name = typeof s.name === 'object' && s.name !== null
+        ? (s.name[lang] || s.name.en || s.name.hi || Object.values(s.name)[0] || 'Scheme')
+        : (s.name || 'Scheme');
+      const desc = typeof s.description === 'object' && s.description !== null
+        ? (s.description[lang] || s.description.en || s.description.hi || '')
+        : (s.description || '');
       const benefit = s.benefit_amount_max ? ` (Max: Rs.${s.benefit_amount_max})` : '';
       const url = s.application_url ? `\nApply: ${s.application_url}` : '';
-      return `${i + 1}. ${name}${benefit}\n${desc.slice(0, 100)}...${url}`;
+      return `${i + 1}. ${name}${benefit}\n${desc.slice(0, 200)}${url}`;
     })
     .join('\n\n');
 }
@@ -91,8 +115,8 @@ router.post('/webhook', async (req, res) => {
       return res.type('text/xml').send(twimlReply(greet[lang] || greet.en));
     }
 
-    // Fetch relevant schemes
-    const schemes = await fetchTopSchemes(3);
+    // Fetch relevant schemes (personalized if user exists)
+    const schemes   = await fetchSchemesForUser(from, 3);
     const formatted = formatSchemes(schemes, lang);
 
     const header = {

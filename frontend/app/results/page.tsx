@@ -1,203 +1,136 @@
-'use client';
-/**
- * ArthSathi — Results Page (v2)
- *
- * OFFLINE BUG FIX:
- * - Does NOT use navigator.onLine alone (unreliable).
- * - Checks connectivity by attempting a lightweight GET to /api/health
- *   with a 5s timeout and up to 2 retries.
- * - On failure: loads from IndexedDB/localStorage cache with banner.
- * - Never shows a blocking "No internet" error screen.
- *
- * RESULTS:
- * - Shows up to 10 schemes + top 5 insurance from the Python engine.
- * - Each card shows: name, benefit, "why this fits you" from score breakdown,
- *   documents needed, Listen button, Save/Apply/Not for me.
- * - Interactions logged back to /api/schemes/event for adaptive learning.
- */
+﻿'use client';
 
 import { useEffect, useState, Suspense, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { getApiUrl } from '@/lib/config';
+import { t, initLanguage } from '@/i18n';
+import { useRouter } from 'next/navigation';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const CACHE_KEY = 'as_results_v2';
-
-// ─── Types ─────────────────────────────────────────────────────────────────
+const API = getApiUrl();
+const CACHE_KEY = 'as_results_v3';
+const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
 
 interface SchemeResult {
   id: string;
-  source_id: string;
-  name: { en?: string; hi?: string; [k: string]: string | undefined };
-  description?: { en?: string; [k: string]: string | undefined };
-  benefits_text?: { en?: string; [k: string]: string | undefined };
-  category: string;
-  tags?: string[];
-  benefit_type?: string;
+  name: any;
+  description?: any;
+  category?: string;
+  ministry?: string;
+  benefit_value?: number;
   benefit_amount_min?: number;
   benefit_amount_max?: number;
   application_url?: string;
-  ministry?: string;
-  level?: string;
-  score: number;
-  score_breakdown?: Record<string, number>;
-  eligibility_status?: 'eligible' | 'likely' | 'unknown';
-  explain_text?: string;
-  missing_criteria?: string[];
-  _is_exploration?: boolean;
+  source?: string;
+  documents_required?: string[];
+  how_to_apply?: string;
 }
-
 interface InsuranceResult {
   id: string;
-  source_id: string;
-  name: { en?: string; hi?: string; [k: string]: string | undefined };
-  description?: { en?: string; [k: string]: string | undefined };
+  name: any;
+  description?: any;
   annual_premium?: number;
   coverage_amount?: number;
-  coverage_type?: string;
   application_url?: string;
-  score: number;
-  score_breakdown?: Record<string, number>;
-  eligibility_status?: string;
-  explain_text?: string;
+  source?: string;
 }
 
-// ─── Connectivity check ───────────────────────────────────────────────────
-
-async function checkConnectivity(retries = 2): Promise<boolean> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const ctrl = new AbortController();
-      const tid   = setTimeout(() => ctrl.abort(), 5000);
-      const r     = await fetch(`${API}/api/health`, { signal: ctrl.signal });
-      clearTimeout(tid);
-      if (r.ok) return true;
-    } catch { /* try again */ }
-    if (i < retries - 1) await new Promise(r => setTimeout(r, 1000));
-  }
-  return false;
+function saveCache(d: unknown) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: d, ts: Date.now() })); } catch {}
 }
-
-// ─── Cache ────────────────────────────────────────────────────────────────
-
-function saveCache(data: { schemes: SchemeResult[]; insurance: InsuranceResult[]; ts: number }) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
-}
-
-function loadCache(): { schemes: SchemeResult[]; insurance: InsuranceResult[]; ts: number } | null {
+function loadCache() {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const r = localStorage.getItem(CACHE_KEY);
+    if (!r) return null;
+    const parsed = JSON.parse(r);
+    if (Date.now() - parsed.ts > CACHE_TTL) { localStorage.removeItem(CACHE_KEY); return null; }
+    return parsed.data;
   } catch { return null; }
 }
 
-// ─── Content helpers ──────────────────────────────────────────────────────
-
-function getName(item: SchemeResult | InsuranceResult, lang = 'en'): string {
-  if (!item.name) return 'Unknown';
-  if (typeof item.name === 'string') return item.name;
-  return item.name[lang] || item.name['en'] || Object.values(item.name)[0] || 'Unknown';
+async function checkOnline() {
+  try {
+    const c = new AbortController();
+    setTimeout(() => c.abort(), 4000);
+    const r = await fetch(`${API}/api/health`, { signal: c.signal });
+    return r.ok;
+  } catch { return false; }
 }
 
-function getDesc(item: SchemeResult, lang = 'en'): string {
-  const b = item.benefits_text;
-  const d = item.description;
-  const src = b || d;
-  if (!src) return '';
-  if (typeof src === 'string') return src;
-  return src[lang] || src['en'] || '';
+function getName(item: unknown): string {
+  if (!item) return 'Unknown';
+  const i = item as Record<string, unknown>;
+  if (!i.name) return 'Unknown';
+  if (typeof i.name === 'string') return i.name;
+  const n = i.name as Record<string, string>;
+  // Try user's language first
+  const lang = typeof window !== 'undefined' ? (localStorage.getItem('arthsathi_lang') || 'hi') : 'hi';
+  return n[lang] || n.en || n.hi || Object.values(n)[0] || 'Unknown';
 }
 
-function formatAmount(v: number | undefined): string {
+function getDesc(item: unknown): string {
+  if (!item) return '';
+  const i = item as Record<string, unknown>;
+  const s = i.description || (i as Record<string, unknown>).benefits_text;
+  if (!s) return '';
+  if (typeof s === 'string') return s;
+  const lang = typeof window !== 'undefined' ? (localStorage.getItem('arthsathi_lang') || 'hi') : 'hi';
+  const d = s as Record<string, string>;
+  return d[lang] || d.en || d.hi || '';
+}
+
+function fmt(v?: number): string {
   if (!v) return '';
   if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
-  if (v >= 1000)   return `₹${(v / 1000).toFixed(0)}K`;
+  if (v >= 1000) return `₹${(v / 1000).toFixed(0)}K`;
   return `₹${v}`;
 }
 
-// ─── Inner page ───────────────────────────────────────────────────────────
+function SourceBadge({ source }: { source?: string }) {
+  if (!source) return null;
+  const domain = source.replace(/^https?:\/\//, '').split('/')[0];
+  return (
+    <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-medium truncate max-w-full block">
+      {domain}
+    </span>
+  );
+}
 
 function ResultsContent() {
-  const router       = useRouter();
-  const searchParams = useSearchParams();
-  const isOfflineParam = searchParams.get('offline') === '1';
-
+  useEffect(() => { initLanguage(); }, []);
+  const router = useRouter();
   const [schemes,   setSchemes]   = useState<SchemeResult[]>([]);
   const [insurance, setInsurance] = useState<InsuranceResult[]>([]);
   const [loading,   setLoading]   = useState(true);
-  const [isOffline, setIsOffline] = useState(false);
-  const [cacheAge,  setCacheAge]  = useState<Date | null>(null);
-  const [tab,       setTab]       = useState<'schemes' | 'insurance'>('schemes');
-  const [sessionId, setSessionId] = useState('');
-  const [lang]                    = useState(() =>
-    typeof window !== 'undefined' ? (localStorage.getItem('as_lang') || 'en') : 'en'
-  );
+  const [offline,   setOffline]   = useState(false);
+  const [tab,       setTab]       = useState<'schemes'|'insurance'>('schemes');
+  const [signals,   setSignals]   = useState<{boosts: Record<string,number>, suppressions: Record<string,number>}>({ boosts: {}, suppressions: {} });
 
-  const loadResults = useCallback(async () => {
+  const logInteraction = useCallback(async (schemeId: string, action: 'apply' | 'dismiss') => {
+    const userId = localStorage.getItem('as_user_id');
+    if (!userId) return;
+    try {
+      await fetch(`${API}/api/schemes/interact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, scheme_id: schemeId, action }),
+      });
+    } catch {}
+  }, []);
+
+  const load = useCallback(async () => {
     setLoading(true);
-    setIsOffline(false);
-
     const userId = typeof window !== 'undefined' ? localStorage.getItem('as_user_id') : null;
-
-    // Check connectivity with real HTTP ping (not navigator.onLine)
-    const online = !isOfflineParam && await checkConnectivity();
+    if (!userId) { router.push('/auth'); return; }
+    const online = await checkOnline();
 
     if (!online) {
-      const cached = loadCache();
-      if (cached) {
-        setSchemes(cached.schemes || []);
-        setInsurance(cached.insurance || []);
-        setCacheAge(new Date(cached.ts));
-        setIsOffline(true);
-      }
+      const c = loadCache();
+      if (c) { setSchemes(c.schemes || []); setInsurance(c.insurance || []); setOffline(true); }
       setLoading(false);
       return;
     }
 
-    // If no userId, fetch general schemes list instead of recommendations
-    if (!userId) {
-      try {
-        const [sRes, iRes] = await Promise.all([
-          fetch(`${API}/api/schemes?limit=10`),
-          fetch(`${API}/api/insurance?limit=5`),
-        ]);
-
-        const sData = await sRes.json();
-        const iData = await iRes.json();
-
-        const s = sData.success ? (sData.data || []).map((scheme: any) => ({
-          ...scheme,
-          score: 0.5,
-          explain_text: 'Complete your profile for personalized recommendations',
-          eligibility_status: 'unknown'
-        })) : [];
-        
-        const i = iData.success ? (iData.data || []).map((policy: any) => ({
-          ...policy,
-          score: 0.5,
-          explain_text: 'Complete your profile for personalized recommendations',
-          eligibility_status: 'unknown'
-        })) : [];
-
-        setSchemes(s);
-        setInsurance(i);
-        saveCache({ schemes: s, insurance: i, ts: Date.now() });
-        setLoading(false);
-        return;
-      } catch {
-        const cached = loadCache();
-        if (cached) {
-          setSchemes(cached.schemes || []);
-          setInsurance(cached.insurance || []);
-          setCacheAge(new Date(cached.ts));
-          setIsOffline(true);
-        }
-        setLoading(false);
-        return;
-      }
-    }
-
     try {
-      const [sRes, iRes] = await Promise.all([
+      const [sR, iR] = await Promise.all([
         fetch(`${API}/api/schemes/recommend`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -209,336 +142,279 @@ function ResultsContent() {
           body: JSON.stringify({ user_id: userId, limit: 5 }),
         }),
       ]);
+      const sData = await sR.json().catch(() => ({ data: [] }));
+      const iData = await iR.json().catch(() => ({ data: [] }));
+      let s = sData.data || [];
+      let ins = iData.data || [];
 
-      const sData = await sRes.json();
-      const iData = await iRes.json();
-
-      const s = sData.success ? (sData.data || []) : [];
-      const i = iData.success ? (iData.data || []) : [];
-      setSchemes(s);
-      setInsurance(i);
-      if (sData.session_id) setSessionId(sData.session_id);
-
-      // Cache for offline
-      saveCache({ schemes: s, insurance: i, ts: Date.now() });
-    } catch {
-      // Server reachable but error — show cache
-      const cached = loadCache();
-      if (cached) {
-        setSchemes(cached.schemes || []);
-        setInsurance(cached.insurance || []);
-        setCacheAge(new Date(cached.ts));
-        setIsOffline(true);
+      if (s.length === 0) {
+        const fb = await fetch(`${API}/api/schemes?limit=10`);
+        s = (await fb.json().catch(() => ({ data: [] }))).data || [];
       }
+      if (ins.length === 0) {
+        const fb = await fetch(`${API}/api/insurance?limit=5`);
+        ins = (await fb.json().catch(() => ({ data: [] }))).data || [];
+      }
+
+      setSchemes(s);
+      setInsurance(ins);
+      saveCache({ schemes: s, insurance: ins });
+
+      // Fetch collaborative signals for this user
+      if (userId) {
+        fetch(`${API}/api/schemes/signals?user_id=${userId}`)
+          .then(r => r.json())
+          .then(d => { if (d.success) setSignals(d); })
+          .catch(() => {});
+      }
+    } catch {
+      const c = loadCache();
+      if (c) { setSchemes(c.schemes || []); setInsurance(c.insurance || []); setOffline(true); }
     } finally {
       setLoading(false);
     }
-  }, [isOfflineParam, router]);
+  }, [router]);
 
-  useEffect(() => { loadResults(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [load]);
 
-  // Log interaction event
-  const logEvent = useCallback(async (
-    entityId: string, entityType: 'scheme'|'insurance',
-    eventType: string, rank: number,
-    breakdown?: Record<string, number>
-  ) => {
-    const userId = localStorage.getItem('as_user_id');
-    if (!userId) return;
-    try {
-      fetch(`${API}/api/schemes/event`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId, entity_id: entityId, entity_type: entityType,
-          event_type: eventType, rank_position: rank, session_id: sessionId,
-          score_breakdown: breakdown,
-          client_event_id: `${userId}_${entityId}_${eventType}_${Date.now()}`,
-        }),
-      });
-    } catch {}
-  }, [sessionId]);
-
-  if (loading) return <LoadingState />;
+  if (loading) return (
+    <main className="min-h-screen bg-gray-50 px-4 py-6">
+      <div className="animate-pulse space-y-3 max-w-lg mx-auto">
+        {[1,2,3,4].map(i => <div key={i} className="bg-white rounded-2xl h-32 border border-gray-100" />)}
+      </div>
+    </main>
+  );
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* Offline banner */}
-      {isOffline && (
-        <div className="bg-amber-500 text-white px-4 py-3 text-center text-sm font-semibold flex items-center justify-center gap-2">
-          <span>📵</span>
-          Offline — showing saved results
-          {cacheAge && <span className="opacity-80 ml-1">(saved {cacheAge.toLocaleDateString()})</span>}
+    <main className="min-h-screen bg-gray-50 pb-10">
+      {offline && (
+        <div className="bg-amber-500 text-white text-center text-xs py-2">
+          {t('results.offline') || '📵 Offline — saved results'}
         </div>
       )}
 
-      {/* Header */}
       <header className="bg-primary text-white px-5 pt-8 pb-5">
         <div className="flex items-center justify-between mb-2">
-          <button onClick={() => router.push('/')}
-            className="text-white/80 text-sm flex items-center gap-1 min-h-[44px]">
-            ← Home
+          <button onClick={() => router.push('/')} className="text-white/80 text-sm">
+            {t('results.home') || '← Home'}
           </button>
-          <button onClick={() => router.push('/onboarding')}
-            className="text-white/80 text-sm min-h-[44px]">
-            ✏️ Edit profile
+          <button onClick={() => router.push('/onboarding')} className="text-white/80 text-sm">
+            ✏️ {t('results.edit_profile') || 'Edit profile'}
           </button>
         </div>
-        <h1 className="text-2xl font-bold">Your Results</h1>
+        <h1 className="text-2xl font-bold">{t('results.your_results') || 'Your Results'}</h1>
         <p className="text-white/80 text-sm mt-1">
-          {schemes.length} scheme{schemes.length !== 1 ? 's' : ''} + {insurance.length} insurance plan{insurance.length !== 1 ? 's' : ''}
+          {schemes.length} {t('results.schemes_tab') || 'schemes'} + {insurance.length} {t('results.insurance_tab') || 'insurance'}
         </p>
       </header>
 
-      {/* Tabs */}
-      <div className="flex bg-white border-b border-gray-200 sticky top-0 z-10">
-        {[
-          { key: 'schemes',   label: `🌾 Schemes (${schemes.length})` },
-          { key: 'insurance', label: `🛡️ Insurance (${insurance.length})` },
-        ].map(t => (
-          <button key={t.key}
-            onClick={() => setTab(t.key as typeof tab)}
-            className={`flex-1 py-4 text-base font-semibold border-b-4 transition-colors min-h-[56px] ${tab === t.key ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}
-          >{t.label}</button>
+      <div className="flex bg-white border-b sticky top-0 z-10">
+        {(['schemes', 'insurance'] as const).map(k => (
+          <button key={k} onClick={() => setTab(k)}
+            className={`flex-1 py-4 text-sm font-semibold border-b-4 transition-colors ${tab === k ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}>
+            {k === 'schemes'
+              ? `🌾 ${t('results.schemes_tab') || 'Schemes'} (${schemes.length})`
+              : `🛡️ ${t('results.insurance_tab') || 'Insurance'} (${insurance.length})`}
+          </button>
         ))}
       </div>
 
-      {/* Cards */}
-      <div className="px-4 py-5">
+      <div className="px-4 py-4 max-w-lg mx-auto">
         {tab === 'schemes' ? (
           schemes.length === 0
-            ? <EmptyState onRetry={loadResults} />
-            : schemes.map((s, i) => (
-              <SchemeCard key={s.id || s.source_id} scheme={s} rank={i+1} lang={lang}
-                onLog={(et) => logEvent(s.id, 'scheme', et, i+1, s.score_breakdown)} />
-            ))
+            ? (
+              <div className="text-center py-16">
+                <p className="text-5xl mb-3">🔍</p>
+                <p className="font-bold text-gray-700 mb-4">{t('results.no_schemes') || 'No schemes found'}</p>
+                <button className="btn-primary" onClick={load}>{t('results.try_again') || 'Try Again'}</button>
+              </div>
+            )
+            : (
+              <div className="space-y-3">
+                {schemes
+                  .slice()
+                  .sort((a, b) => {
+                    const aId = String(a.id || '');
+                    const bId = String(b.id || '');
+                    const aScore = (signals.boosts[aId] || 0) - (signals.suppressions[aId] || 0);
+                    const bScore = (signals.boosts[bId] || 0) - (signals.suppressions[bId] || 0);
+                    return bScore - aScore;
+                  })
+                  .map((s, i) => (
+                    <SchemeCard
+                      key={s.id || i}
+                      scheme={s}
+                      onApply={() => logInteraction(s.id, 'apply')}
+                      onDismiss={() => logInteraction(s.id, 'dismiss')}
+                    />
+                  ))
+                }</div>
+            )
         ) : (
           insurance.length === 0
-            ? <EmptyState onRetry={loadResults} />
-            : insurance.map((p, i) => (
-              <InsuranceCard key={p.id || p.source_id} policy={p} rank={i+1} lang={lang}
-                onLog={(et) => logEvent(p.id, 'insurance', et, i+1, p.score_breakdown)} />
-            ))
+            ? (
+              <div className="text-center py-16">
+                <p className="text-5xl mb-3">🛡️</p>
+                <p className="font-bold text-gray-700 mb-4">{t('results.no_insurance') || 'No insurance plans found'}</p>
+                <button className="btn-primary" onClick={load}>{t('results.try_again') || 'Try Again'}</button>
+              </div>
+            )
+            : (
+              <div className="space-y-3">
+                {insurance.map((p, i) => <InsuranceCard key={p.id || i} policy={p} />)}
+              </div>
+            )
         )}
-      </div>
-
-      {/* Document checker CTA */}
-      <div className="px-4 pb-10">
-        <div className="bg-amber-50 border-2 border-amber-200 rounded-3xl p-5 text-center">
-          <p className="text-4xl mb-2">📄</p>
-          <h3 className="font-bold text-gray-900 text-xl mb-1">Check a Document</h3>
-          <p className="text-gray-600 text-sm mb-4">Understand any agreement before you sign</p>
-          <button className="btn-primary" onClick={() => router.push('/document')}>
-            Take a Photo
-          </button>
-        </div>
       </div>
     </main>
   );
 }
 
-// ─── SchemeCard ───────────────────────────────────────────────────────────
-
-function SchemeCard({ scheme, rank, lang, onLog }: {
-  scheme: SchemeResult; rank: number; lang: string;
-  onLog: (et: string) => void;
-}) {
+function SchemeCard({ scheme, onApply, onDismiss }: { scheme: SchemeResult; onApply: () => void; onDismiss: () => void }) {
   const [expanded, setExpanded] = useState(false);
-  const name    = getName(scheme, lang);
-  const desc    = getDesc(scheme, lang);
-  const score   = Math.round((scheme.score || 0) * 100);
-  const benefit = scheme.benefit_amount_max || scheme.benefit_amount_min;
-  const status  = scheme.eligibility_status;
+  const [actioned, setActioned] = useState<'apply'|'dismiss'|null>(null);
+  const name    = getName(scheme);
+  const desc    = getDesc(scheme);
+  const benefit = (scheme as SchemeResult).benefit_value || scheme.benefit_amount_max || scheme.benefit_amount_min;
+
+  if (actioned === 'dismiss') {
+    return (
+      <div className="bg-gray-50 rounded-2xl border border-gray-100 p-3 flex items-center justify-between opacity-60">
+        <p className="text-sm text-gray-400 truncate">{name}</p>
+        <button onClick={() => { setActioned(null); }} className="text-xs text-blue-500 underline ml-2 shrink-0">Undo</button>
+      </div>
+    );
+  }
 
   return (
-    <article className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 mb-4">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex-1">
-          <h3 className="font-bold text-gray-900 text-lg leading-snug">{name}</h3>
-          {scheme.level && (
-            <span className={`inline-block text-xs px-2 py-0.5 rounded-full mt-1 font-medium ${scheme.level === 'central' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-              {scheme.level === 'central' ? '🇮🇳 Central' : '🏛️ State'}
-            </span>
-          )}
-        </div>
-        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-          <span className={`text-xs font-bold px-2 py-1 rounded-full ${score >= 70 ? 'bg-green-100 text-green-800' : score >= 40 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>
-            ⭐ {score}%
+    <article className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-2">
+      <div className="flex items-start justify-between gap-2">
+        {scheme.category && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold shrink-0">
+            {scheme.category}
           </span>
-          {status === 'likely' && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Likely</span>
-          )}
-          {scheme._is_exploration && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">New</span>
-          )}
-        </div>
+        )}
+        <SourceBadge source={scheme.source} />
       </div>
 
+      <h3 className="font-bold text-gray-900 text-base leading-snug">{name}</h3>
+
+      {scheme.ministry && (
+        <p className="text-xs text-gray-400 truncate">{scheme.ministry}</p>
+      )}
+
       {benefit && (
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-green-600 font-bold text-xl">{formatAmount(benefit)}</span>
-          <span className="text-gray-400 text-sm">{scheme.benefit_type === 'cash_direct' ? '/year' : ''}</span>
+        <div className="bg-green-50 rounded-lg px-3 py-1.5 text-center self-start">
+          <span className="text-green-700 font-bold text-sm">{fmt(benefit)}</span>
         </div>
       )}
 
-      {scheme.explain_text && (
-        <p className="text-sm text-gray-600 bg-green-50 rounded-xl px-3 py-2 mb-3">
-          ✅ {scheme.explain_text}
+      {/* Description — show 400 chars by default, full on expand */}
+      {desc && (
+        <p className="text-sm text-gray-600 leading-relaxed">
+          {expanded ? desc : desc.slice(0, 400)}
+          {!expanded && desc.length > 400 && '...'}
         </p>
       )}
 
-      {status === 'likely' && scheme.missing_criteria && scheme.missing_criteria.length > 0 && (
-        <p className="text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2 mb-3">
-          ℹ️ Answer {scheme.missing_criteria.length} more question{scheme.missing_criteria.length > 1 ? 's' : ''} to confirm eligibility
-        </p>
-      )}
-
-      {scheme.tags && scheme.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {scheme.tags.slice(0, 4).map(t => (
-            <span key={t} className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
-              {t.replace(/_/g, ' ')}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {expanded && desc && (
-        <p className="text-sm text-gray-700 mb-3 leading-relaxed">{desc.slice(0, 400)}</p>
-      )}
-
-      {expanded && scheme.score_breakdown && (
-        <div className="bg-gray-50 rounded-2xl p-3 mb-3 space-y-2">
-          <p className="text-xs font-semibold text-gray-500 mb-2">Why this score:</p>
-          {Object.entries(scheme.score_breakdown)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5)
-            .map(([k, v]) => (
-              <div key={k} className="flex items-center gap-2 text-xs">
-                <span className="text-gray-500 w-36 truncate capitalize">{k.replace(/f\d_/, '').replace(/_/g,' ')}</span>
-                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-2 bg-primary rounded-full" style={{ width: `${Math.round(v * 100)}%` }} />
-                </div>
-                <span className="text-gray-700 font-medium w-8 text-right">{Math.round(v * 100)}%</span>
-              </div>
+      {/* Documents required */}
+      {expanded && scheme.documents_required && scheme.documents_required.length > 0 && (
+        <div className="bg-amber-50 rounded-xl p-3">
+          <p className="text-xs font-semibold text-amber-800 mb-1">📋 Documents needed:</p>
+          <ul className="text-xs text-amber-700 space-y-0.5">
+            {scheme.documents_required.map((doc, i) => (
+              <li key={i}>• {doc}</li>
             ))}
+          </ul>
         </div>
       )}
 
-      <div className="flex gap-2 mt-3">
+      {/* How to apply */}
+      {expanded && scheme.how_to_apply && (
+        <div className="bg-blue-50 rounded-xl p-3">
+          <p className="text-xs font-semibold text-blue-800 mb-1">📝 How to apply:</p>
+          <p className="text-xs text-blue-700">{scheme.how_to_apply}</p>
+        </div>
+      )}
+
+      {scheme.application_url && (
+        <a href={scheme.application_url} target="_blank" rel="noopener noreferrer"
+          className="text-xs text-blue-600 underline mb-1 block truncate">
+          🔗 {scheme.application_url.replace(/^https?:\/\//, '').slice(0, 50)}
+        </a>
+      )}
+
+      <div className="flex gap-2 mt-1">
+        <button
+          onClick={() => { setActioned('dismiss'); onDismiss(); }}
+          className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-50 text-red-500 text-lg shrink-0"
+          title="Not relevant"
+        >✕</button>
         {scheme.application_url && (
           <a href={scheme.application_url} target="_blank" rel="noopener noreferrer"
-            onClick={() => onLog('apply')}
-            className="flex-1 btn-primary text-center text-sm py-3">
-            Apply Now
+            onClick={() => { setActioned('apply'); onApply(); }}
+            className="flex-1 bg-green-600 text-white text-sm font-semibold rounded-xl py-2.5 text-center">
+            {t('results.apply') || 'Apply'}
           </a>
         )}
-        <button onClick={() => { setExpanded(e => !e); onLog('click'); }}
-          className="btn-secondary py-3 px-4 text-sm flex-shrink-0">
-          {expanded ? '▲' : 'Details'}
-        </button>
-        <button onClick={() => onLog('dismiss')}
-          className="py-3 px-3 text-gray-400 hover:text-gray-600 min-h-[48px] flex-shrink-0"
-          aria-label="Not for me">✕</button>
+        {(desc && desc.length > 400) || scheme.documents_required?.length ? (
+          <button onClick={() => setExpanded(e => !e)}
+            className="bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl py-2.5 px-3">
+            {expanded ? (t('results.less') || 'Less') : (t('results.more') || 'More')}
+          </button>
+        ) : null}
       </div>
     </article>
   );
 }
 
-// ─── InsuranceCard ────────────────────────────────────────────────────────
-
-function InsuranceCard({ policy, rank, lang, onLog }: {
-  policy: InsuranceResult; rank: number; lang: string;
-  onLog: (et: string) => void;
-}) {
-  const name  = getName(policy, lang);
-  const score = Math.round((policy.score || 0) * 100);
+function InsuranceCard({ policy }: { policy: InsuranceResult }) {
+  const name = getName(policy);
+  const desc = getDesc(policy);
 
   return (
-    <article className="bg-white rounded-3xl shadow-sm border-l-4 border-l-blue-400 border border-gray-100 p-5 mb-4">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <h3 className="font-bold text-gray-900 text-lg flex-1 leading-snug">{name}</h3>
-        <span className={`text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ${score >= 70 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-          ⭐ {score}%
-        </span>
+    <article className="bg-white rounded-2xl shadow-sm border-t-4 border-t-blue-500 border border-gray-100 p-4 flex flex-col gap-2">
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="font-bold text-gray-900 text-base leading-snug flex-1">{name}</h3>
+        <SourceBadge source={policy.source} />
       </div>
 
-      <div className="flex gap-5 mb-3">
+      {desc && <p className="text-sm text-gray-600 leading-relaxed">{desc}</p>}
+
+      <div className="grid grid-cols-2 gap-2">
         {policy.annual_premium !== undefined && (
-          <div>
-            <p className="text-xs text-gray-500">Annual Premium</p>
-            <p className="font-bold text-lg text-amber-600">
-              {policy.annual_premium === 0 ? 'FREE' : `₹${policy.annual_premium}`}
+          <div className="bg-amber-50 rounded-lg px-2 py-2 text-center">
+            <p className="text-[10px] text-gray-500">{t('insurance.premium')||'Premium'}</p>
+            <p className="font-bold text-sm text-amber-600">
+              {Number(policy.annual_premium) === 0 ? 'FREE' : `₹${policy.annual_premium}/yr`}
             </p>
           </div>
         )}
         {policy.coverage_amount && (
-          <div>
-            <p className="text-xs text-gray-500">Coverage</p>
-            <p className="font-bold text-lg text-primary">{formatAmount(policy.coverage_amount)}</p>
+          <div className="bg-blue-50 rounded-lg px-2 py-2 text-center">
+            <p className="text-[10px] text-gray-500">{t('insurance.coverage')||'Cover'}</p>
+            <p className="font-bold text-sm text-blue-600">{fmt(policy.coverage_amount)}</p>
           </div>
         )}
       </div>
 
-      {policy.explain_text && (
-        <p className="text-sm text-gray-600 bg-blue-50 rounded-xl px-3 py-2 mb-3">
-          ✅ {policy.explain_text}
-        </p>
+      {policy.application_url && (
+        <a href={policy.application_url} target="_blank" rel="noopener noreferrer"
+          className="bg-blue-600 text-white text-sm font-semibold rounded-xl py-2.5 text-center block">
+          {t('results.enrol') || 'Enrol Now'}
+        </a>
       )}
-
-      <div className="flex gap-2 mt-3">
-        {policy.application_url && (
-          <a href={policy.application_url} target="_blank" rel="noopener noreferrer"
-            onClick={() => onLog('apply')}
-            className="flex-1 btn-primary text-center text-sm py-3">
-            Enrol Now
-          </a>
-        )}
-        <button onClick={() => onLog('dismiss')}
-          className="py-3 px-3 text-gray-400 hover:text-gray-600 min-h-[48px]"
-          aria-label="Not for me">✕</button>
-      </div>
     </article>
   );
 }
 
-// ─── Skeleton / Empty ─────────────────────────────────────────────────────
-
-function LoadingState() {
-  return (
-    <main className="min-h-screen bg-gray-50 px-4 py-8">
-      <div className="animate-pulse space-y-4">
-        {[1,2,3].map(i => (
-          <div key={i} className="bg-white rounded-3xl p-5 h-40 border border-gray-100">
-            <div className="h-5 bg-gray-200 rounded-xl w-3/4 mb-3" />
-            <div className="h-4 bg-gray-200 rounded-xl w-1/3 mb-3" />
-            <div className="h-16 bg-gray-100 rounded-xl" />
-          </div>
-        ))}
-      </div>
-    </main>
-  );
-}
-
-function EmptyState({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="text-center py-16 px-5">
-      <p className="text-5xl mb-4">🔍</p>
-      <p className="text-xl text-gray-600 mb-2">No results found</p>
-      <p className="text-gray-400 text-sm mb-6">Try updating your profile for better matches</p>
-      <div className="space-y-3">
-        <button className="btn-primary" onClick={onRetry}>Try Again</button>
-        <a href="/onboarding" className="btn-secondary block text-center">Update Profile</a>
-      </div>
-    </div>
-  );
-}
-
-// ─── Export ───────────────────────────────────────────────────────────────
-
 export default function ResultsPage() {
   return (
-    <Suspense fallback={<LoadingState />}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-400">Loading...</p>
+      </div>
+    }>
       <ResultsContent />
     </Suspense>
   );

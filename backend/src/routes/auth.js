@@ -22,7 +22,7 @@ router.post('/link-telegram', async (req, res, next) => {
     const clean = phone.toString().replace(/\D/g, '').slice(-10);
 
     // Find user by phone
-    const found = await query('SELECT * FROM users WHERE phone_number = $1', [clean]);
+    const found = await query('SELECT * FROM users WHERE phone = $1', [clean]);
     if (found.rows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -34,7 +34,7 @@ router.post('/link-telegram', async (req, res, next) => {
 
     // Link telegram_id
     await query(
-      'UPDATE users SET telegram_id = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE users SET telegram_id = $1 WHERE id = $2',
       [String(telegram_id), user.id]
     );
 
@@ -57,7 +57,7 @@ router.post('/link-whatsapp', async (req, res, next) => {
 
     const clean = phone.toString().replace(/\D/g, '').slice(-10);
 
-    const found = await query('SELECT * FROM users WHERE phone_number = $1', [clean]);
+    const found = await query('SELECT * FROM users WHERE phone = $1', [clean]);
     if (found.rows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -68,7 +68,7 @@ router.post('/link-whatsapp', async (req, res, next) => {
     const user = found.rows[0];
 
     await query(
-      'UPDATE users SET whatsapp_number = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE users SET whatsapp_number = $1 WHERE id = $2',
       [String(whatsapp_number), user.id]
     );
 
