@@ -98,9 +98,10 @@ router.put('/:id', async (req, res, next) => {
       `UPDATE users SET
          preferred_language = COALESCE($1, preferred_language),
          full_name          = COALESCE($2, full_name),
-         state              = COALESCE($3, state)
-       WHERE id = $4 RETURNING *`,
-      [preferred_language, full_name, state, req.params.id]
+         state              = COALESCE($3, state),
+         whatsapp_number    = COALESCE($4, whatsapp_number)
+       WHERE id = $5 RETURNING *`,
+      [preferred_language, full_name, state, req.body.whatsapp_number || null, req.params.id]
     );
     if (!r.rows[0]) return res.status(404).json({ success: false, error: { code: 'USER_NOT_FOUND', message: 'Not found' } });
     invalidateUserCache(req.params.id); // bust recommendation cache on profile change
@@ -178,7 +179,7 @@ router.get('/', async (req, res, next) => {
     const { phone, telegram_id, whatsapp } = req.query;
     let r;
     if (telegram_id) r = await query('SELECT * FROM users WHERE telegram_id = $1', [String(telegram_id)]);
-    else if (whatsapp) r = await query('SELECT * FROM users WHERE whatsapp_number = $1', [whatsapp]);
+    else if (whatsapp) r = await query('SELECT * FROM users WHERE whatsapp_number = $1 OR whatsapp_number = $2', [whatsapp, whatsapp.replace(/^whatsapp:/i, '')]);
     else if (phone)  r = await query('SELECT * FROM users WHERE phone = $1', [phone]);
     else return res.json({ success: true, data: [] });
     res.json({ success: true, data: r.rows });

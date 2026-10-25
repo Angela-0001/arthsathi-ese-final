@@ -9,21 +9,69 @@ const { twiml } = twilio;
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001";
 const WEBAPP_URL  = process.env.WEBAPP_URL  || "http://localhost:3000";
 
-const WELCOME = `🙏 नमस्ते! ArthSathi में आपका स्वागत है।
+// Store user language preferences (in-memory, resets on restart)
+const userLanguages = new Map();
 
-Hello! I'm ArthSathi. Type:
-1️⃣ *1* — Government Schemes | सरकारी योजनाएँ
-2️⃣ *2* — Insurance Policies | बीमा योजनाएँ
-3️⃣ *3* — Financial Roadmap | वित्तीय रोडमैप
-4️⃣ *4* — Analyze a Document | दस्तावेज़ जाँच
+function getLanguageSelectionMessage() {
+  return `🙏 नमस्ते! Welcome to ArthSathi
 
-📎 To get personalised results, type:
-*link <your phone number>*
+🌐 भाषा चुनें / Select language / भाषा निवडा:
+
+🇮🇳 Type HI for हिंदी (Hindi)
+🇬🇧 Type EN for English
+🇮🇳 Type MR for मराठी (Marathi)`;
+}
+
+function getMainMenu(lang = 'hi') {
+  const menus = {
+    hi: `🙏 नमस्ते! ArthSathi में आपका स्वागत है
+
+कृपया चुनें:
+1️⃣ सरकारी योजनाएँ
+2️⃣ बीमा पॉलिसी
+3️⃣ वित्तीय रोडमैप
+4️⃣ दस्तावेज़ विश्लेषण और जोखिम जांच
+5️⃣ मेरा प्रोफाइल
+
+📎 प्रोफाइल लिंक करें:
+link <फ़ोन नंबर>
+उदाहरण: link 9876543210
+
+🌐 वेब ऐप: ${WEBAPP_URL}`,
+
+    en: `🙏 Welcome to ArthSathi!
+
+Please select:
+1️⃣ Government Schemes
+2️⃣ Insurance Policies
+3️⃣ Financial Roadmap
+4️⃣ Document Analysis & Risk Check
+5️⃣ My Profile
+
+📎 Link your profile:
+link <phone number>
 Example: link 9876543210
 
-Or send a photo/PDF of any document to check for risky clauses.
+🌐 Web app: ${WEBAPP_URL}`,
 
-🌐 Web app: ${WEBAPP_URL}`;
+    mr: `🙏 नमस्कार! ArthSathi मध्ये आपले स्वागत आहे
+
+कृपया निवडा:
+1️⃣ सरकारी योजना
+2️⃣ विमा पॉलिसी
+3️⃣ आर्थिक रोडमॅप
+4️⃣ दस्तऐवज विश्लेषण आणि जोखीम तपासणी
+5️⃣ माझा प्रोफाइल
+
+📎 प्रोफाइल लिंक करा:
+link <फोन नंबर>
+उदाहरण: link 9876543210
+
+🌐 वेब अॅप: ${WEBAPP_URL}`
+  };
+
+  return menus[lang] || menus.en;
+}
 
 
 export async function whatsappWebhook(req, res) {
@@ -31,29 +79,55 @@ export async function whatsappWebhook(req, res) {
 
   const text = (Body || "").trim();
   const textLower = text.toLowerCase();
-  const userLang = detectLanguage(text);
+  const textUpper = text.toUpperCase();
+  let userLang = userLanguages.get(From);
   let replyText = "";
 
   try {
+    // ── If no language selected yet ────────────────────────────────────
+    if (!userLang) {
+      if (["HI", "EN", "MR"].includes(textUpper)) {
+        // Language chosen
+        userLang = textUpper === "HI" ? "hi" : textUpper === "EN" ? "en" : "mr";
+        userLanguages.set(From, userLang);
+        replyText = getMainMenu(userLang);
+        return _sendReply(res, replyText);
+      }
+      // Allow link command without language set
+      if (textLower.startsWith("link ")) {
+        userLang = "en";
+      } else {
+        // Everything else — ask for language first
+        replyText = getLanguageSelectionMessage();
+        return _sendReply(res, replyText);
+      }
+    }
+
+    // ── Language already set — allow changing via HI/EN/MR ────────────
+    if (["HI", "EN", "MR"].includes(textUpper) && userLang) {
+      userLang = textUpper === "HI" ? "hi" : textUpper === "EN" ? "en" : "mr";
+      userLanguages.set(From, userLang);
+      replyText = getMainMenu(userLang);
+      return _sendReply(res, replyText);
+    }
+
     // ── Image/document sent ────────────────────────────────────────────
     if (parseInt(NumMedia) > 0 && MediaUrl0) {
-      replyText = await _analyzeDocument(MediaUrl0, MediaContentType0 || "image/jpeg", userLang);
+      replyText = await _analyzeDocument(MediaUrl0, MediaContentType0 || "image/jpeg", userLang || 'hi');
     }
 
     // ── link <phone> ───────────────────────────────────────────────────
     else if (textLower.startsWith("link ")) {
       const rawPhone = text.replace(/^link\s+/i, "").replace(/\D/g, "").slice(-10);
       if (rawPhone.length < 10) {
-        replyText = await translate("To link your profile, send: link 9876543210\n\nUse the same phone number you registered with on the web app.", userLang);
+        replyText = await translate("To link your profile, send: link 9876543210\n\nUse the same phone number you registered with on the web app.", userLang || 'hi');
       } else {
-        replyText = await _linkProfile(From, rawPhone, userLang);
+        replyText = await _linkProfile(From, rawPhone, userLang || 'hi');
       }
     }
 
     // ── Number shortcuts ───────────────────────────────────────────────
-    else if (text === "1" || textLower === "schemes" || textLower === "scheme") {
-      const loading = await translate("Fetching eligible government schemes...", userLang);
-      _sendReply(res, `⏳ ${loading}`);
+    else if (text === "1" && userLang) {
       const result = await sendToBackend({
         user_id: From,
         channel: "whatsapp",
@@ -61,25 +135,21 @@ export async function whatsappWebhook(req, res) {
         detected_language: userLang,
       });
       const fallback = await translate("No schemes found. Complete your profile on the web app first.", userLang);
-      return _sendReply(res, result.text_response || fallback);
+      replyText = result.text_response || fallback;
     }
 
-    else if (text === "2" || textLower === "insurance") {
-      const loading = await translate("Fetching insurance recommendations...", userLang);
-      _sendReply(res, `⏳ ${loading}`);
+    else if (text === "2" && userLang) {
       const result = await sendToBackend({
         user_id: From,
         channel: "whatsapp",
         intent: "insurance_recommend",
         detected_language: userLang,
       });
-      const fallback = await translate(`Visit the web app for insurance: ${WEBAPP_URL}/insurance`, userLang);
-      return _sendReply(res, result.text_response || fallback);
+      const fallback = await translate("No insurance plans found. Visit the web app to complete your profile.", userLang);
+      replyText = result.text_response || fallback;
     }
 
-    else if (text === "3" || textLower === "roadmap") {
-      const loading = await translate("Building your financial roadmap...", userLang);
-      _sendReply(res, `⏳ ${loading}`);
+    else if (text === "3" && userLang) {
       const result = await sendToBackend({
         user_id: From,
         channel: "whatsapp",
@@ -87,34 +157,49 @@ export async function whatsappWebhook(req, res) {
         detected_language: userLang,
       });
       const fallback = await translate("Could not generate roadmap. Please complete your profile first.", userLang);
-      return _sendReply(res, result.text_response || fallback);
+      replyText = result.text_response || fallback;
     }
 
-    else if (text === "4" || textLower === "document") {
-      replyText = await translate("Please send a photo or PDF of the document you want to analyze.", userLang);
-      replyText += "\nकृपया अपने दस्तावेज़ की फ़ोटो भेजें।";
+    else if (text === "4" && userLang) {
+      replyText = await translate("Please send a photo or PDF of any document (loan agreement, insurance policy, rental deed, etc). I will explain it in plain language and flag any risky clauses.", userLang);
     }
 
-    // ── hi / hello / start ─────────────────────────────────────────────
-    else if (["hi", "hello", "start", "नमस्ते", "हेलो"].includes(textLower)) {
-      replyText = WELCOME;
+    else if (text === "5" && userLang) {
+      const result = await sendToBackend({
+        user_id: From,
+        channel: "whatsapp",
+        intent: "profile",
+        detected_language: userLang,
+      });
+      const fallback = await translate("Could not fetch profile. Please try again.", userLang);
+      replyText = result.text_response || fallback;
+    }
+
+    // ── hi / hello / start — reset language selection ─────────────────
+    else if (["hi", "hello", "start", "नमस्ते", "हेलो", "नमस्कार"].includes(textLower)) {
+      userLanguages.delete(From);
+      replyText = getLanguageSelectionMessage();
     }
 
     // ── General message ────────────────────────────────────────────────
     else {
-      const result = await sendToBackend({
-        user_id: From,
-        channel: "whatsapp",
-        intent: "general_query",
-        raw_text: text,
-        detected_language: userLang,
-      });
-      replyText = result.text_response || WELCOME;
+      if (!userLang) {
+        replyText = getLanguageSelectionMessage();
+      } else {
+        const result = await sendToBackend({
+          user_id: From,
+          channel: "whatsapp",
+          intent: "general_query",
+          raw_text: text,
+          detected_language: userLang,
+        });
+        replyText = result.text_response || getMainMenu(userLang);
+      }
     }
 
   } catch (err) {
     console.error("[WhatsApp] Error:", err.message);
-    replyText = await translate("Sorry, something went wrong. Please try again.", userLang);
+    replyText = await translate("Sorry, something went wrong. Please try again.", userLang || 'hi');
   }
 
   return _sendReply(res, replyText);
@@ -186,24 +271,43 @@ async function _analyzeDocument(mediaUrl, contentType, userLang = 'hi') {
 
 async function _linkProfile(whatsappFrom, phone, userLang = 'hi') {
   try {
-    // Check if user exists with this phone
-    const resp = await axios.get(`${BACKEND_URL}/api/users`, {
-      params: { phone },
-      timeout: 10000,
-    });
+    // Try phone as-is, then with 91 prefix, then last 10 digits
+    const phone10 = phone.replace(/\D/g, '').slice(-10);
+    const phone91 = '91' + phone10;
 
-    const users = resp.data?.data || [];
+    let users = [];
+    for (const p of [phone10, phone91, phone]) {
+      const resp = await axios.get(`${BACKEND_URL}/api/users`, {
+        params: { phone: p },
+        timeout: 10000,
+      });
+      users = resp.data?.data || [];
+      if (users.length) break;
+    }
+
     if (users.length === 0) {
       const notFound = await translate(`No account found for ${phone}. Make sure you registered on the web app with this exact number.`, userLang);
       return `❌ ${notFound}\n\n🌐 Register at: ${WEBAPP_URL}/auth`;
     }
 
-    const success = await translate("Profile linked! Your ArthSathi profile is now connected.", userLang);
-    const instructions = await translate("Type *1* for your personalised schemes\nType *2* for insurance recommendations\nType *3* for your financial roadmap", userLang);
+    // Save whatsapp_number to the user's profile (strip whatsapp: prefix, fit varchar(20))
+    const userId = users[0].id;
+    const waNumber = whatsappFrom.replace(/^whatsapp:/i, "").slice(0, 20);
+    try {
+      await axios.put(`${BACKEND_URL}/api/users/${userId}`, {
+        whatsapp_number: waNumber,
+      }, { timeout: 10000 });
+    } catch (e) {
+      console.warn('[WhatsApp] Could not save whatsapp_number:', e.message);
+    }
+
+    const name = users[0].full_name ? `, ${users[0].full_name}` : '';
+    const success = await translate(`Profile linked${name}! Your ArthSathi profile is now connected.`, userLang);
+    const instructions = await translate("Type 1 for your personalised schemes\nType 2 for insurance recommendations\nType 3 for your financial roadmap", userLang);
     return `✅ ${success}\n\n${instructions}\n\n🌐 ${WEBAPP_URL}`;
   } catch (err) {
     console.error("[WhatsApp] Link error:", err.message);
-    const error = await translate(`Could not link profile. Try again or visit ${WEBAPP_URL}/auth`, userLang);
+    const error = await translate(`Could not link profile. Is the backend running?`, userLang);
     return `❌ ${error}`;
   }
 }

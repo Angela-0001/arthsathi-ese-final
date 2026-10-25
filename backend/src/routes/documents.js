@@ -38,8 +38,8 @@ const upload = multer({
   storage,
   limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE_MB || '10', 10) * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp', 'image/tiff'];
-    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error('Only image files accepted'));
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp', 'image/tiff', 'application/pdf'];
+    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error('Only images and PDFs are supported'));
   },
 });
 
@@ -86,10 +86,33 @@ router.post('/upload', upload.single('document'), async (req, res, next) => {
     setImmediate(async () => {
       try {
         const ocrResult = await processDocument(req.file.path, language);
+
+        // Check for OCR quality error from Python
+        if (ocrResult.error && ocrResult.confidence < 50) {
+          try {
+            await query(
+              `UPDATE documents SET
+                summary_text   = $1,
+                risk_flags     = $2,
+                overall_risk   = 'unknown',
+                ocr_confidence = $3,
+                processed_at   = NOW()
+               WHERE id = $4`,
+              [ocrResult.error, JSON.stringify([]), ocrResult.confidence || 0, docId]
+            );
+          } catch {
+            await query(
+              `UPDATE document_analyses SET
+                summary = $1, risk_flags = $2, verified = TRUE
+               WHERE id = $3`,
+              [ocrResult.error, JSON.stringify([]), docId]
+            ).catch(() => {});
+          }
+          return;
+        }
+
         const riskFlags   = ocrResult.risk_flags || [];
-        const highCount   = riskFlags.filter(f => f.severity === 'high' || f.severity === 'critical').length;
-        const mediumCount = riskFlags.filter(f => f.severity === 'medium').length;
-        const overallRisk = highCount > 0 ? 'high' : mediumCount > 0 ? 'medium' : 'low';
+        const overallRisk = ocrResult.risk_level || (riskFlags.some(f => f.severity === 'high') ? 'high' : riskFlags.some(f => f.severity === 'medium') ? 'medium' : 'low');
 
         // Try documents table first
         try {
@@ -107,7 +130,7 @@ router.post('/upload', upload.single('document'), async (req, res, next) => {
               ocrResult.summary  || '',
               JSON.stringify(riskFlags),
               overallRisk,
-              ocrResult.ocr_confidence || 0,
+              ocrResult.confidence || 0,
               docId,
             ]
           );

@@ -194,7 +194,7 @@ Give practical 2-sentence financial advice for:
 Age: ${user.age}, Gender: ${user.gender}, Occupation: ${user.occupation}, Monthly income: Rs.${income}, State: ${user.state}.
 Focus on saving money, budgeting, and building financial security. Be direct and specific.`;
       const completion = await groq.chat.completions.create({
-        model: 'llama3-8b-8192',
+        model: 'openai/gpt-oss-120b',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 150,

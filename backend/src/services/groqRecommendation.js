@@ -26,7 +26,7 @@ const { query } = require('../db');
 const { fetchUserProfile } = require('../services/profileService');
 
 const groq  = new Groq({ apiKey: process.env.GROQ_API_KEY || 'dummy-key-to-prevent-crash' });
-const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
 // ─── In-memory cache ──────────────────────────────────────────────────────────
 // Stores scheme and insurance results per user for 1 hour.

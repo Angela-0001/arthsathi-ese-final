@@ -111,7 +111,9 @@ router.post('/recommend', async (req, res, next) => {
       try {
         const { getRelevantSchemes } = require('../services/groqRecommendation');
         const schemes = await getRelevantSchemes(user_id, limit);
-        return res.json({ success: true, source: 'groq', data: schemes });
+        if (schemes && schemes.length > 0) {
+          return res.json({ success: true, source: 'groq', data: schemes });
+        }
       } catch (e) {
         console.error('[Schemes] Groq error:', e.message);
       }
@@ -122,19 +124,28 @@ router.post('/recommend', async (req, res, next) => {
     if (engineUp) {
       try {
         const result = await getRecommendations(user_id, { limit, itemType: 'scheme' });
-        return res.json({ success: true, source: 'engine', data: result.schemes || [] });
+        if (result.schemes?.length > 0) {
+          return res.json({ success: true, source: 'engine', data: result.schemes });
+        }
       } catch (e) {
         console.error('[Schemes] Engine error:', e.message);
       }
     }
 
-    // No AI available — return empty, tell user to set up
-    res.json({
-      success: true,
-      source: 'none',
-      data: [],
-      message: 'No recommendation engine available. Please set GROQ_API_KEY in backend/.env'
-    });
+    // DB fallback — filter schemes by basic profile criteria
+    const dbSchemes = await query(
+      `SELECT id, scheme_id, name, description, category, ministry,
+              min_age, max_age, max_income, benefit_value, application_url
+       FROM schemes
+       WHERE is_active = TRUE
+         AND (min_age IS NULL OR min_age <= $1)
+         AND (max_age IS NULL OR max_age >= $1)
+         AND (max_income IS NULL OR max_income >= $2)
+       ORDER BY engagement_weight DESC NULLS LAST
+       LIMIT $3`,
+      [profile.age || 25, profile.monthly_income || 0, limit]
+    );
+    return res.json({ success: true, source: 'db', data: dbSchemes.rows });
   } catch (err) {
     next(err);
   }
@@ -320,7 +331,9 @@ insuranceRouter.post('/recommend', async (req, res, next) => {
       try {
         const { getRelevantInsurance } = require('../services/groqRecommendation');
         const policies = await getRelevantInsurance(user_id, limit);
-        return res.json({ success: true, source: 'groq', data: policies });
+        if (policies && policies.length > 0) {
+          return res.json({ success: true, source: 'groq', data: policies });
+        }
       } catch (e) {
         console.error('[Insurance] Groq error:', e.message);
       }
@@ -331,25 +344,28 @@ insuranceRouter.post('/recommend', async (req, res, next) => {
     if (engineUp) {
       try {
         const result = await getRecommendations(user_id, { limit, itemType: 'insurance' });
-        return res.json({ success: true, source: 'engine', data: result.insurance || [] });
+        if (result.insurance?.length > 0) {
+          return res.json({ success: true, source: 'engine', data: result.insurance });
+        }
       } catch (e) {
         console.error('[Insurance] Engine error:', e.message);
       }
     }
 
-    // No AI available — return all policies (real data, no AI filtering)
+    // DB fallback — filter by age
     const allPolicies = await query(
       `SELECT id, source_id, name, description, category,
               annual_premium, coverage_amount, coverage_type,
               application_url, min_age, max_age, administered_by
        FROM insurance_policies
        WHERE is_active = TRUE
+         AND (min_age IS NULL OR min_age <= $1)
+         AND (max_age IS NULL OR max_age >= $1)
        ORDER BY annual_premium ASC NULLS FIRST
-       LIMIT $1`,
-      [limit]
+       LIMIT $2`,
+      [profile.age || 25, limit]
     );
-
-    res.json({ success: true, source: 'fallback', data: allPolicies.rows });
+    res.json({ success: true, source: 'db', data: allPolicies.rows });
   } catch (err) {
     next(err);
   }

@@ -19,7 +19,7 @@ interface DocResult {
   id: string;
   summary_text: string;
   risk_flags: RiskFlag[];
-  overall_risk: 'low' | 'medium' | 'high' | 'critical';
+  overall_risk: 'low' | 'medium' | 'high' | 'critical' | 'unknown';
   ocr_confidence: number;
   llm_model_used: string;
   conversation_history?: { role: string; content: string }[];
@@ -31,8 +31,9 @@ const RISK_COLORS: Record<string, string> = {
   critical: 'bg-red-200 border-red-600 text-red-900',
   medium:   'bg-amber-100 border-amber-400 text-amber-900',
   low:      'bg-green-100 border-green-400 text-green-900',
+  unknown:  'bg-gray-100 border-gray-400 text-gray-900',
 };
-const RISK_EMOJI: Record<string, string> = { high:'🔴', critical:'🚨', medium:'🟡', low:'🟢' };
+const RISK_EMOJI: Record<string, string> = { high:'🔴', critical:'🚨', medium:'🟡', low:'🟢', unknown:'⚪' };
 
 export default function DocumentPage() {
   const router = useRouter();
@@ -156,7 +157,7 @@ export default function DocumentPage() {
                 <span className="text-4xl">📁</span>
                 <span>{t('doc.upload') || 'Upload Image'}</span>
               </button>
-              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/bmp"
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/bmp,application/pdf"
                 className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
             </div>
 
@@ -225,7 +226,9 @@ export default function DocumentPage() {
                 <span className="text-5xl">{RISK_EMOJI[riskLevel]}</span>
                 <div className="flex-1">
                   <p className="font-bold text-xl mb-1">
-                    {riskLevel === 'high' || riskLevel === 'critical'
+                    {riskLevel === 'unknown'
+                      ? (t('doc.quality_error') || 'IMAGE QUALITY TOO LOW — Please retake with better lighting')
+                      : riskLevel === 'high' || riskLevel === 'critical'
                       ? (t('doc.high_risk') || 'HIGH RISK — Read carefully before signing')
                       : riskLevel === 'medium'
                       ? (t('doc.medium_risk') || 'MEDIUM RISK — Check these points')

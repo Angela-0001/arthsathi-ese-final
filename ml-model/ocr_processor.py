@@ -1,4 +1,4 @@
-ï»¿"""ArthSathi OCR + Risk Analysis Pipeline"""
+"""ArthSathi OCR + Risk Analysis Pipeline"""
 import os, sys, re, json, logging, argparse
 from pathlib import Path
 
@@ -22,7 +22,7 @@ OLLAMA_HOST  = os.getenv("OLLAMA_HOST",  "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mistral")
 
 # ---------------------------------------------------------------------------
-# Direct text extraction (docx / pdf / txt) â€” no OCR needed
+# Direct text extraction (docx / pdf / txt) — no OCR needed
 # ---------------------------------------------------------------------------
 def extract_text_from_file(file_path: str) -> str:
     ext = Path(file_path).suffix.lower()
@@ -93,47 +93,103 @@ def run_ocr(processed_img: np.ndarray, lang: str = "en") -> dict:
 # ---------------------------------------------------------------------------
 # Risk detection
 # ---------------------------------------------------------------------------
+
+def detect_risks_with_groq(text: str, language: str = "en") -> list:
+    """Use Groq to identify actual financial/legal risks in the document contextually.
+    Returns a list of risk flags, or None if Groq is unavailable/fails."""
+    api_key = os.getenv("GROQ_API_KEY", "")
+    if not api_key or len(text.strip().split()) < 10:
+        return None
+    try:
+        import urllib.request
+        prompt = (
+            "You are a financial document risk analyzer. Analyze the following document text and identify "
+            "ONLY genuine financial or legal risks that could harm the signer/party. "
+            "Only flag risks that are ACTUALLY PRESENT in the text — do not invent or assume risks. "
+            "If this is not a financial/legal agreement (e.g. a resume, letter, essay), return an empty list. "
+            "Return ONLY a JSON array. Each element: "
+            '{"risk_type": "short_name", "severity": "high|medium|low", '
+            '"explanation": "one sentence explanation", "context": "exact quote from document"}. '
+            "Maximum 5 flags. If no risks, return [].\n\n"
+            f"Document text:\n{text[:3000]}\n\nJSON array:"
+        )
+        payload = json.dumps({
+            "model": "openai/gpt-oss-120b",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            "max_tokens": 500,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            "https://api.groq.com/openai/v1/chat/completions",
+            data=payload,
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode())
+            content = data["choices"][0]["message"]["content"].strip()
+            # Extract JSON array from response
+            start = content.find("[")
+            end   = content.rfind("]")
+            if start == -1 or end == -1:
+                return []
+            flags = json.loads(content[start:end+1])
+            # Validate structure
+            valid = []
+            for f in flags:
+                if isinstance(f, dict) and "risk_type" in f and "explanation" in f:
+                    f.setdefault("severity", "medium")
+                    f.setdefault("context", "")
+                    if f["severity"] not in ("high", "medium", "low"):
+                        f["severity"] = "medium"
+                    valid.append(f)
+            return valid
+    except Exception as e:
+        log.warning(f"Groq risk detection failed: {e}")
+        return None
+
+# Stricter patterns — require multi-word financial context, not single common words
 RISK_PATTERNS = [
-    {"pattern": r"ownership.{0,30}transfer|transfer.{0,20}ownership|property.{0,20}vest|title.{0,20}transfer",
+    {"pattern": r"transfer\s+(?:of\s+)?ownership|transfer\s+(?:of\s+)?title|vest\s+(?:the\s+)?property",
      "risk_type": "ownership_transfer", "severity": "high",
      "explanation": "This clause transfers ownership or property rights. Understand exactly what you are giving up before signing."},
-    {"pattern": r"penalty|forfeiture|forfeit|liquidated damage|compensation.{0,20}breach|damages.{0,20}default",
+    {"pattern": r"penalty\s+(?:clause|charge|fee|for|of)|forfeit\s+(?:the\s+)?deposit|liquidated\s+damages|penalty\s+for\s+(?:late|default|breach)",
      "risk_type": "penalty_clause", "severity": "high",
      "explanation": "This document contains penalty terms. You may be required to pay money if conditions are not met."},
-    {"pattern": r"irrevocable|non.?refundable|no.{0,10}cooling.off|cannot.{0,10}cancel|final.{0,10}binding",
+    {"pattern": r"irrevocable|non[- ]refundable|no\s+cooling[- ]off\s+period|cannot\s+be\s+cancelled|final\s+and\s+binding",
      "risk_type": "no_cooling_off", "severity": "high",
      "explanation": "This agreement may be irrevocable. You may not be able to cancel or get a refund after signing."},
-    {"pattern": r"auto.{0,10}renew|automatic.{0,10}renewal|deemed.{0,10}renew|rollover",
+    {"pattern": r"auto\s*(?:renew|renewal)|automatic\s+renewal|deemed\s+renewal|auto[- ]renew",
      "risk_type": "auto_renewal", "severity": "medium",
      "explanation": "This agreement automatically renews unless you take action. You may be charged again without notice."},
-    {"pattern": r"amount.{0,20}as.{0,20}determined|amount.{0,20}to.{0,20}be.{0,20}filled|TBD|to be decided",
+    {"pattern": r"amount\s+(?:as|to be)\s+(?:determined|filled|decided)|to\s+be\s+decided|TBD|blank\s+space",
      "risk_type": "blank_amount", "severity": "high",
      "explanation": "Amount or key terms are left blank. Do not sign until all amounts are filled in."},
-    {"pattern": r"(?:interest|rate).{0,20}(?:\d+(?:\.\d+)?)\s*%",
+    {"pattern": r"interest\s+rate\s*(?:of)?\s*\d+(?:\.\d+)?\s*%|\d+(?:\.\d+)?\s*%\s*(?:per\s+annum|p\.?a\.|interest)",
      "risk_type": "interest_rate", "severity": "medium",
      "explanation": "This document specifies an interest rate. Verify it is reasonable before agreeing."},
-    {"pattern": r"collateral|pledge|hypothecat|mortgage|lien|encumber|charge.{0,20}property|security.{0,20}interest",
+    {"pattern": r"pledge.{0,15}(?:as\s+)?collateral|hypothecat\w+|mortgage.{0,15}(?:the\s+)?property|lien\s+on|encumber\w+\s+(?:the\s+)?property|collateral\s+security",
      "risk_type": "collateral", "severity": "high",
      "explanation": "You are pledging property as collateral. You could lose this property if you default."},
-    {"pattern": r"power.{0,10}of.{0,10}attorney|authorise.{0,20}to.{0,20}act|act.{0,20}on.{0,20}behalf",
+    {"pattern": r"power\s+of\s+attorney|authoriz\w+\s+(?:to\s+)?act\s+on\s+(?:my|your|his|her)\s+behalf",
      "risk_type": "power_of_attorney", "severity": "high",
      "explanation": "This grants someone else authority to act on your behalf. This is a serious legal right."},
-    {"pattern": r"arbitration.{0,30}binding|waive.{0,20}right.{0,20}court|no.{0,20}right.{0,20}sue",
+    {"pattern": r"binding\s+arbitration|waive\s+(?:the\s+)?right\s+to\s+sue|no\s+right\s+to\s+(?:sue|go\s+to\s+court)",
      "risk_type": "arbitration_clause", "severity": "medium",
      "explanation": "Disputes must go to arbitration, not court. This may limit your legal rights."},
-    {"pattern": r"agricultural.{0,20}land.{0,20}(?:pledge|mortgage|collateral|security)|farm.{0,20}(?:pledge|mortgage)",
+    {"pattern": r"(?:agricultural\s+land|farm\s+land).{0,20}(?:pledge|mortgage|collateral|security|hypothecat)",
      "risk_type": "farm_land_pledge", "severity": "high",
      "explanation": "Your farming land is being used as security. You could lose your land if you cannot repay."},
-    {"pattern": r"termination.{0,30}without.{0,10}cause|terminate.{0,20}at.{0,20}will|notice.{0,20}period.{0,20}\d+.{0,10}day",
+    {"pattern": r"terminate.{0,20}without\s+(?:cause|notice)|terminate\s+at\s+will|notice\s+period\s+of\s+\d+\s+days",
      "risk_type": "termination_clause", "severity": "medium",
      "explanation": "This document contains termination terms. Check the notice period and conditions."},
-    {"pattern": r"waive.{0,20}right|waiver.{0,20}claim|surrender.{0,20}right",
+    {"pattern": r"waive\s+(?:my|your|the|any)\s+right|waiver\s+of\s+claim|surrender\s+(?:my|your|the)\s+right",
      "risk_type": "rights_waiver", "severity": "high",
      "explanation": "You may be giving up important legal rights. Read this carefully before signing."},
-    {"pattern": r"personal.{0,10}guarantee|personal.{0,10}liability|guarantor",
+    {"pattern": r"personal\s+guarantee|personal\s+liability|acting\s+as\s+guarantor",
      "risk_type": "personal_guarantee", "severity": "high",
      "explanation": "You are personally guaranteeing this agreement. Your personal assets may be at risk."},
-    {"pattern": r"confidential|non.?disclosure|NDA|shall not disclose",
+    {"pattern": r"non[- ]disclosure\s+agreement|shall\s+not\s+disclose|confidentiality\s+obligation",
      "risk_type": "confidentiality", "severity": "medium",
      "explanation": "This document contains confidentiality obligations. Breaching this may result in legal action."},
 ]
@@ -163,7 +219,7 @@ def overall_risk_level(flags: list) -> str:
 # Summarization
 # ---------------------------------------------------------------------------
 def summarize_with_groq(text: str, language: str = "en") -> str:
-    """Use Groq API for summarization â€” much faster and no local install needed."""
+    """Use Groq API for summarization — much faster and no local install needed."""
     api_key = os.getenv("GROQ_API_KEY", "")
     if not api_key:
         return None
@@ -172,12 +228,13 @@ def summarize_with_groq(text: str, language: str = "en") -> str:
         lang_names = {"hi": "Hindi", "mr": "Marathi", "en": "English"}
         lang_name = lang_names.get(language, "English")
         prompt = (
-            f"Summarize this legal/financial document in simple {lang_name} for a rural Indian user. "
-            f"Use 3-5 bullet points. Highlight any risks or important clauses.\n\n"
+            f"Summarize this document in simple {lang_name} for a rural Indian user. "
+            f"Use 3-5 bullet points. If it is a financial or legal agreement, highlight any risks or important clauses. "
+            f"If it is not a financial/legal document, just summarize what it says.\n\n"
             f"Document:\n{text[:3000]}\n\nSummary in {lang_name}:"
         )
         payload = json.dumps({
-            "model": "llama-3.3-70b-versatile",
+            "model": "openai/gpt-oss-120b",
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.2,
             "max_tokens": 400,
@@ -209,7 +266,7 @@ def answer_question_ollama(text: str, question: str, language: str = "en") -> st
             f"Be concise and factual.\n\nDocument:\n{text[:2000]}\n\nQuestion: {question}\n\nAnswer in {lang_name}:"
         )
         payload = json.dumps({
-            "model": "llama-3.3-70b-versatile",
+            "model": "openai/gpt-oss-120b",
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.1,
             "max_tokens": 200,
@@ -271,18 +328,27 @@ def process_document(image_path: str, language: str = "en", question: str = None
             result["raw_text"]   = ocr_result["text"]
             result["confidence"] = ocr_result["confidence"]
             result["word_count"] = ocr_result["word_count"]
-            if ocr_result["word_count"] < 5:
-                result["error"]   = "Very little text extracted. Retake photo with better lighting."
+
+            # Quality gate: reject low-confidence OCR
+            if ocr_result["word_count"] < 10 or ocr_result["confidence"] < 50:
+                result["error"]   = "Image quality too low. Please provide a clearer photo with better lighting."
                 result["summary"] = result["error"]
+                result["risk_flags"] = []
+                result["risk_level"] = "unknown"
                 result["success"] = True
                 return result
 
-        # 3. Risk detection
-        risk_flags = detect_risk_clauses(result["raw_text"])
+        # 3. Risk detection — try Groq (contextual) first, fall back to regex
+        groq_flags = detect_risks_with_groq(result["raw_text"], language)
+        if groq_flags is not None:
+            log.info(f"Groq risk detection: {len(groq_flags)} flags")
+            risk_flags = groq_flags
+        else:
+            risk_flags = detect_risk_clauses(result["raw_text"])
         result["risk_flags"] = risk_flags
         result["risk_level"] = overall_risk_level(risk_flags)
 
-        # 4. Summarize â€” try Groq first, fall back to rule-based
+        # 4. Summarize — try Groq first, fall back to rule-based
         llm_summary = summarize_with_groq(result["raw_text"], language)
         result["summary"] = llm_summary if llm_summary else summarize_rule_based(result["raw_text"], risk_flags)
 

@@ -1,20 +1,28 @@
-/**
- * ArthSathi — HTTP Server Entry Point
- *
- * Starts the Express app and listens on the configured port.
- * Graceful shutdown on SIGINT/SIGTERM for clean process management.
+﻿/**
+ * ArthSathi — HTTP + WebSocket Server Entry Point
  */
 
+require('dotenv').config();
 const app  = require('./src/app');
 const { pool } = require('./src/db');
+const { WebSocketServer } = require('ws');
+const { handleVoicebotConnection } = require('./src/services/voicebotService');
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🌱 ArthSathi API running on http://localhost:${PORT}`);
   console.log(`   Health check: http://localhost:${PORT}/api/health`);
-  console.log(`   DB check:     http://localhost:${PORT}/api/health/db\n`);
+  console.log(`   Voicebot WS:  ws://localhost:${PORT}/voicebot\n`);
 });
+
+// ── WebSocket server for Exotel voicebot ────────────────────────────────────
+const wss = new WebSocketServer({ server, path: '/voicebot' });
+wss.on('connection', (ws, req) => {
+  console.log('[VoiceBot] New connection');
+  handleVoicebotConnection(ws, req);
+});
+console.log('[VoiceBot] WebSocket server ready at /voicebot');
 
 // ---------------------------------------------------------------------------
 // Graceful shutdown
