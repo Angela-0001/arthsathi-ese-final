@@ -1,18 +1,13 @@
 'use strict';
 
 /**
- * ArthSathi — Profile-Based Recommendation Engine
+ * ArthSathi — Profile-Based Recommendation Engine v2
  *
- * Implements mandatory slot logic:
- * - Female   → women-centric schemes
- * - Widow    → widow pension
- * - Disabled → disability schemes
- * - Elderly  → old age pension
- * - BPL/Poor → poverty relief
- * - SC/ST/OBC → caste-specific
- * - Farmer   → agricultural
- * - Student  → education/scholarship
- * Remaining slots filled by Groq or DB fallback.
+ * Uses PostgreSQL TEXT[] columns target_groups and eligible_states
+ * for accurate, fast, zero-token-limit scheme filtering.
+ *
+ * Run tag_schemes.js once to populate target_groups and eligible_states.
+ * After that, recommendations are pure SQL — no AI at query time.
  */
 
 const { query } = require('../db');
@@ -21,16 +16,156 @@ const Groq = require('groq-sdk');
 const groq  = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 const MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
-// ── Keyword search helper ───────────────────────────────────────────────────
+// ── Check if schemes have been tagged ──────────────────────────────────────
+let _taggingChecked = false;
+let _taggingDone    = false;
+
+async function isTaggingDone() {
+  if (_taggingChecked) return _taggingDone;
+  try {
+    const r = await query(
+      `SELECT COUNT(*) FROM schemes WHERE is_active=TRUE AND target_groups IS NOT NULL AND target_groups != '{}'`
+    );
+    _taggingDone    = parseInt(r.rows[0].count) > 100; // at least 100 tagged
+    _taggingChecked = true;
+    return _taggingDone;
+  } catch {
+    return false;
+  }
+}
+
+// ── SQL-based recommendation (after tagging) ────────────────────────────────
+async function getSchemesByTags(profile, limit) {
+  const age    = parseInt(profile.age)    || 25;
+  const income = parseFloat(profile.monthly_income) || 0;
+  const state  = profile.state || null;
+
+  const isFemale    = profile.gender === 'female';
+  const isDisabled  = profile.is_disabled === true || profile.has_disability === true;
+  const isWidow     = profile.is_widow === true;
+  const isElderly   = age >= 60;
+  const isBPL       = profile.bpl_card === true || ['aay','phh'].includes(profile.ration_card_type || '');
+  const isFarmer    = ['farmer','marginal_farmer','farm_laborer','farm_labourer'].includes(profile.occupation || '');
+  const isStudent   = profile.is_student === true || profile.occupation === 'student';
+  const hasGirl     = profile.has_girl_child === true;
+  const caste       = (profile.caste_category || 'general').toLowerCase();
+
+  // Build required groups based on profile
+  const requiredGroups = [];
+  if (isFemale || isWidow || hasGirl) requiredGroups.push('women');
+  if (isDisabled)  requiredGroups.push('disabled');
+  if (isBPL || income < 5000) requiredGroups.push('bpl');
+  if (isElderly)   requiredGroups.push('elderly');
+  if (isFarmer)    requiredGroups.push('farmers');
+  if (caste === 'sc') requiredGroups.push('sc');
+  if (caste === 'st') requiredGroups.push('st');
+  if (caste === 'obc') requiredGroups.push('obc');
+  if (isStudent || hasGirl) requiredGroups.push('students');
+
+  const results = [];
+  const usedIds = new Set();
+
+  // ── STEP 1: Get schemes for each required group (1-2 per group) ──────────
+  for (const group of requiredGroups) {
+    if (results.length >= limit) break;
+
+    // Exclude non-matching castes for general users
+    const casteExclusion = caste === 'general'
+      ? `AND NOT ('sc' = ANY(target_groups)) AND NOT ('st' = ANY(target_groups)) AND NOT ('obc' = ANY(target_groups))`
+      : '';
+
+    const stateFilter = state
+      ? `AND (eligible_states = '{}' OR $4 = ANY(eligible_states))`
+      : `AND eligible_states = '{}'`;
+
+    const excludeClause = usedIds.size > 0
+      ? `AND id NOT IN (${[...usedIds].map((_, i) => `$${i + (state ? 5 : 4)}`).join(',')})`
+      : '';
+
+    const params = [age, income, group];
+    if (state) params.push(state);
+    params.push(...usedIds);
+
+    const r = await query(
+      `SELECT id, scheme_id, name, description, category, ministry,
+              min_age, max_age, max_income, benefit_value, application_url, target_groups
+       FROM schemes WHERE is_active = TRUE
+         AND $3 = ANY(target_groups)
+         AND (min_age IS NULL OR min_age <= $1)
+         AND (max_age IS NULL OR max_age >= $1)
+         AND (max_income IS NULL OR max_income >= $2)
+         ${stateFilter}
+         ${casteExclusion}
+         ${excludeClause}
+       ORDER BY
+         CASE WHEN eligible_states != '{}' THEN 0 ELSE 1 END, -- prefer state-specific
+         engagement_weight DESC NULLS LAST
+       LIMIT 2`,
+      params
+    );
+
+    for (const s of r.rows) {
+      if (!usedIds.has(s.id)) {
+        usedIds.add(s.id);
+        results.push(s);
+      }
+    }
+  }
+
+  // ── STEP 2: Fill remaining slots with general eligible schemes ────────────
+  const remaining = limit - results.length;
+  if (remaining > 0) {
+    const casteExclusion = caste === 'general'
+      ? `AND NOT ('sc' = ANY(target_groups)) AND NOT ('st' = ANY(target_groups)) AND NOT ('obc' = ANY(target_groups))`
+      : '';
+
+    const stateFilter = state
+      ? `AND (eligible_states = '{}' OR $3 = ANY(eligible_states))`
+      : '';
+
+    const excludeClause = usedIds.size > 0
+      ? `AND id NOT IN (${[...usedIds].map((_, i) => `$${i + (state ? 4 : 3)}`).join(',')})`
+      : '';
+
+    const params = [age, income];
+    if (state) params.push(state);
+    params.push(...usedIds);
+
+    const r = await query(
+      `SELECT id, scheme_id, name, description, category, ministry,
+              min_age, max_age, max_income, benefit_value, application_url, target_groups
+       FROM schemes WHERE is_active = TRUE
+         AND (min_age IS NULL OR min_age <= $1)
+         AND (max_age IS NULL OR max_age >= $1)
+         AND (max_income IS NULL OR max_income >= $2)
+         ${stateFilter}
+         ${casteExclusion}
+         ${excludeClause}
+       ORDER BY engagement_weight DESC NULLS LAST
+       LIMIT ${remaining}`,
+      params
+    );
+
+    for (const s of r.rows) {
+      if (!usedIds.has(s.id)) {
+        usedIds.add(s.id);
+        results.push(s);
+      }
+    }
+  }
+
+  return results;
+}
+
+// ── Keyword fallback (before tagging is done) ───────────────────────────────
 async function fetchByKeywords(keywords, age, income, excludeIds = [], limit = 2) {
   if (!keywords.length) return [];
-  // Search name only (not description) for mandatory slots to avoid false positives
   const kw = keywords.map(k => `%${k}%`);
   const excl = excludeIds.length > 0
     ? `AND id NOT IN (${excludeIds.map((_, i) => `$${i + kw.length + 3}`).join(',')})`
     : '';
-  const nameConditions  = kw.map((_, i) => `name::text ILIKE $${i+3}`).join(' OR ');
-  const descConditions  = kw.map((_, i) => `description::text ILIKE $${i+3}`).join(' OR ');
+  const nameConditions = kw.map((_, i) => `name::text ILIKE $${i+3}`).join(' OR ');
+  const descConditions = kw.map((_, i) => `description::text ILIKE $${i+3}`).join(' OR ');
 
   const r = await query(
     `SELECT id, scheme_id, name, description, category, ministry,
@@ -52,16 +187,25 @@ async function fetchByKeywords(keywords, age, income, excludeIds = [], limit = 2
 
 // ── Main recommendation function ────────────────────────────────────────────
 async function getProfileSchemes(profile, limit = 10) {
+  const tagged = await isTaggingDone();
+
+  if (tagged) {
+    console.log('[RecommendEngine] Using SQL tag-based filtering');
+    return getSchemesByTags(profile, limit);
+  }
+
+  // Fallback: keyword-based (until tagging is done)
+  console.log('[RecommendEngine] Using keyword fallback (run tag_schemes.js to enable SQL filtering)');
+
   const age    = parseInt(profile.age)    || 25;
   const income = parseFloat(profile.monthly_income) || 0;
-
   const isFemale    = profile.gender === 'female';
   const isDisabled  = profile.is_disabled === true || profile.has_disability === true;
   const isWidow     = profile.is_widow === true;
   const isElderly   = age >= 60;
   const isBPL       = profile.bpl_card === true || ['aay','phh'].includes(profile.ration_card_type || '');
-  const isFarmer    = ['farmer','marginal_farmer','farm_laborer','farm_labourer'].includes(profile.occupation || '');
-  const isStudent   = profile.is_student === true || profile.occupation === 'student';
+  const isFarmer    = ['farmer','marginal_farmer','farm_laborer'].includes(profile.occupation || '');
+  const isStudent   = profile.is_student === true;
   const hasGirl     = profile.has_girl_child === true;
   const caste       = (profile.caste_category || 'general').toLowerCase();
   const isNonGeneral = ['sc','st','obc','nt','vjnt'].includes(caste);
@@ -78,74 +222,24 @@ async function getProfileSchemes(profile, limit = 10) {
     }
   }
 
-  // ── MANDATORY SLOTS ─────────────────────────────────────────────────────
-
-  // 1. Women-centric (for females)
-  if (isFemale) {
-    const r = await fetchByKeywords(['mahila','women','beti','kanya','stri','female','girl','widow','vidhwa','matru'], age, income, selectedIds, 2);
-    addSchemes(r);
-  }
-
-  // 2. Widow pension (for widows)
-  if (isWidow && results.length < limit) {
-    const r = await fetchByKeywords(['vidhwa','widow','pension','indira gandhi'], age, income, selectedIds, 1);
-    addSchemes(r);
-  }
-
-  // 3. Disability schemes (for disabled)
-  if (isDisabled && results.length < limit) {
-    const r = await fetchByKeywords(['divyang','disability','disabled','handicap','viklang','specially abled'], age, income, selectedIds, 1);
-    addSchemes(r);
-  }
-
-  // 4. Old age pension (for elderly 60+)
-  if (isElderly && results.length < limit) {
-    const r = await fetchByKeywords(['pension','old age','vridh','senior citizen','bujurg','indira gandhi national old'], age, income, selectedIds, 1);
-    addSchemes(r);
-  }
-
-  // 5. BPL/poverty relief
-  if ((isBPL || income < 5000) && results.length < limit) {
-    const r = await fetchByKeywords(['garib','poor','BPL','antyodaya','PM Garib','ration','food security','below poverty'], age, income, selectedIds, 1);
-    addSchemes(r);
-  }
-
-  // 6. Caste-specific (ONLY for non-general caste)
+  if (isFemale || isWidow || hasGirl) addSchemes(await fetchByKeywords(['mahila','women','beti','kanya','stri','widow','vidhwa','matru'], age, income, selectedIds, 2));
+  if (isDisabled && results.length < limit) addSchemes(await fetchByKeywords(['divyang','disability','disabled','handicap','viklang'], age, income, selectedIds, 1));
+  if (isElderly && results.length < limit) addSchemes(await fetchByKeywords(['pension','old age','vridh','senior citizen'], age, income, selectedIds, 1));
+  if ((isBPL || income < 5000) && results.length < limit) addSchemes(await fetchByKeywords(['garib','poor','BPL','antyodaya','below poverty'], age, income, selectedIds, 1));
   if (isNonGeneral && results.length < limit) {
-    const casteKw = {
-      sc:  ['scheduled caste','SC','dalit','post matric sc'],
-      st:  ['scheduled tribe','ST','tribal','adivasi'],
-      obc: ['OBC','other backward','backward class'],
-      nt:  ['nomadic','denotified'],
-      vjnt:['vjnt','vimukta'],
-    };
-    const r = await fetchByKeywords(casteKw[caste] || ['backward','SC','ST'], age, income, selectedIds, 1);
-    addSchemes(r);
+    const casteKw = { sc: ['scheduled caste','SC dalit'], st: ['scheduled tribe','ST tribal'], obc: ['OBC backward'] };
+    addSchemes(await fetchByKeywords(casteKw[caste] || ['backward'], age, income, selectedIds, 1));
   }
+  if (isFarmer && results.length < limit) addSchemes(await fetchByKeywords(['kisan','farmer','PM-KISAN','fasal','agriculture'], age, income, selectedIds, 1));
+  if ((isStudent || hasGirl) && results.length < limit) addSchemes(await fetchByKeywords(['scholarship','beti bachao','sukanya','education'], age, income, selectedIds, 1));
 
-  // 7. Farmer schemes
-  if (isFarmer && results.length < limit) {
-    const r = await fetchByKeywords(['kisan','farmer','PM-KISAN','fasal','crop insurance','agriculture','krishi'], age, income, selectedIds, 1);
-    addSchemes(r);
-  }
-
-  // 8. Education/girl child
-  if ((isStudent || hasGirl) && results.length < limit) {
-    const r = await fetchByKeywords(['scholarship','beti bachao','sukanya','education loan','chhatra','student','vidya'], age, income, selectedIds, 1);
-    addSchemes(r);
-  }
-
-  console.log(`[RecommendEngine] Mandatory: ${results.length} slots filled, need ${Math.max(0, limit - results.length)} more`);
-
-  // ── FILL REMAINING WITH GROQ OR DB ──────────────────────────────────────
+  // Fill remaining
   const remaining = Math.max(0, limit - results.length);
-
   if (remaining > 0) {
-    const idPlaceholders = selectedIds.length > 0
-      ? `AND id NOT IN (${selectedIds.map((_, i) => `$${i+3}`).join(',')})`
-      : '';
-
     try {
+      const idPlaceholders = selectedIds.length > 0
+        ? `AND id NOT IN (${selectedIds.map((_, i) => `$${i+3}`).join(',')})`
+        : '';
       const eligible = await query(
         `SELECT id, scheme_id, name, description, category, ministry,
                 min_age, max_age, max_income, benefit_value, application_url
@@ -157,19 +251,13 @@ async function getProfileSchemes(profile, limit = 10) {
          ORDER BY engagement_weight DESC NULLS LAST LIMIT 30`,
         [age, income, ...selectedIds]
       );
-      console.log(`[RecommendEngine] Eligible pool: ${eligible.rows.length}`);
-
-      const pool = eligible.rows;
-
-      // Skip Groq for fill step — just take top eligible schemes by engagement weight
-      // Groq is already used for mandatory slots selection via keywords
-      addSchemes(pool.slice(0, remaining));
+      addSchemes(eligible.rows.slice(0, remaining));
     } catch (e) {
-      console.error('[RecommendEngine] DB fill error:', e.message);
+      console.error('[RecommendEngine] Fill error:', e.message);
     }
   }
 
-  console.log(`[RecommendEngine] Final: ${results.length} schemes for user ${profile.id || '?'}`);
+  console.log(`[RecommendEngine] Final: ${results.length} schemes`);
   return results.slice(0, limit);
 }
 
