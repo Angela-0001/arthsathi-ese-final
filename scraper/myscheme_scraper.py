@@ -53,8 +53,8 @@ DB = {
 
 # ─── API Config ────────────────────────────────────────────────────────────
 BASE_URL  = "https://www.myscheme.gov.in/api/apisetu"
-PAGE_SIZE = 20   # items per API page
-DELAY     = 1.0  # seconds between requests (be polite)
+PAGE_SIZE = 50   # items per API page (increased from 20)
+DELAY     = 0.2  # seconds between requests (reduced from 1.0)
 
 HEADERS = {
     "User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
@@ -77,7 +77,7 @@ def get_json(url: str, params: dict = None, retries: int = 3) -> dict | None:
     """GET JSON from myscheme API with retries and caching."""
     for attempt in range(retries):
         try:
-            r = requests.get(url, params=params, headers=HEADERS, timeout=15)
+            r = requests.get(url, params=params, headers=HEADERS, timeout=8)
             if r.status_code == 200:
                 return r.json()
             elif r.status_code == 429:
@@ -105,25 +105,27 @@ def fetch_scheme_list(from_offset: int, size: int = PAGE_SIZE) -> dict | None:
     return get_json(url, params)
 
 
-def fetch_scheme_detail(slug: str) -> dict | None:
-    """Fetch full detail for a single scheme by slug."""
-    # Try cache first
-    cache_file = CACHE_DIR / f"{slug}.json"
-    if cache_file.exists():
-        try:
-            return json.loads(cache_file.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+def fetch_scheme_detail(slug):
+    try:
+        cache_file = CACHE_DIR / f"{slug}.json"
+        if cache_file.exists():
+            try:
+                return json.loads(cache_file.read_text(encoding="utf-8"))
+            except Exception:
+                pass
 
-    url = f"{BASE_URL}/schemes"
-    data = get_json(url, {"slug": slug, "lang": "en"})
-    if data:
-        try:
-            cache_file.write_text(json.dumps(data), encoding="utf-8")
-        except Exception:
-            pass
-    time.sleep(DELAY)
-    return data
+        url = f"{BASE_URL}/schemes"
+        data = get_json(url, {"slug": slug, "lang": "en"})
+        if data:
+            try:
+                cache_file.write_text(json.dumps(data), encoding="utf-8")
+            except Exception:
+                pass
+        time.sleep(DELAY)
+        return data
+    except Exception as e:
+        log.warning(f"fetch_scheme_detail failed for {slug}: {e}")
+        return None
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -593,20 +595,44 @@ def scrape(mode: str = "incremental", limit: int = None):
             log.info("  No more items. Done.")
             break
 
+        # Filter out already-scraped items
+        items_to_process = []
         for item in items:
             slug = item.get("fields", {}).get("slug", "")
             if not slug:
+                fetched += 1
                 continue
-
             source_id = f"MYS-{slug[:190]}"
-            # Incremental skip
             if mode == "incremental" and source_id in existing_source_ids:
                 skipped += 1
                 fetched += 1
                 continue
+            items_to_process.append(item)
 
-            # Fetch full detail
-            detail = fetch_scheme_detail(slug)
+        # Fetch details in parallel (5 threads)
+        from concurrent.futures import ThreadPoolExecutor
+        slugs = [item.get("fields", {}).get("slug", "") for item in items_to_process]
+        details = {}
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_slug = {executor.submit(fetch_scheme_detail, slug): slug for slug in slugs if slug}
+            for future in future_to_slug:
+                slug = future_to_slug[future]
+                try:
+                    details[slug] = future.result(timeout=15)
+                except Exception:
+                    details[slug] = None
+
+        for item in items_to_process:
+            slug = item.get("fields", {}).get("slug", "")
+            if not slug:
+                continue
+                continue
+
+            source_id = f"MYS-{slug[:190]}"
+            # Incremental skip (already handled above)
+
+            # Use pre-fetched detail
+            detail = details.get(slug)
 
             # Parse
             scheme = parse_scheme(item, detail)
@@ -646,6 +672,29 @@ def scrape(mode: str = "incremental", limit: int = None):
   Failed         : {failed}
   Insurance      : +{ins_inserted} inserted, {ins_updated} updated
 """)
+
+    # Auto-tag newly inserted schemes
+    if inserted > 0:
+        log.info(f"Auto-tagging {inserted} new schemes...")
+        import subprocess
+        backend_dir = Path(__file__).parent.parent / "backend"
+        try:
+            result = subprocess.run(
+                ["node", "tag_schemes.js"],
+                cwd=str(backend_dir),
+                capture_output=True, text=True, timeout=3600
+            )
+            if result.returncode == 0:
+                log.info("✅ Auto-tagging complete")
+                # Print last few lines of output
+                for line in result.stdout.strip().split('\n')[-10:]:
+                    if line.strip(): log.info(f"  {line}")
+            else:
+                log.warning(f"⚠️  Tagging exited with code {result.returncode}: {result.stderr[:200]}")
+        except Exception as e:
+            log.warning(f"⚠️  Auto-tagging failed: {e}. Run manually: node tag_schemes.js")
+    else:
+        log.info("No new schemes inserted — skipping auto-tagging")
 
 
 # ════════════════════════════════════════════════════════════════════════════
