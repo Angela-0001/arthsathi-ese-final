@@ -53,6 +53,7 @@ async function getSchemesByTags(profile, limit) {
   // Build required groups based on profile
   const requiredGroups = [];
   if (isFemale || isWidow || hasGirl) requiredGroups.push('women');
+  if (isWidow) requiredGroups.push('widow');
   if (isDisabled)  requiredGroups.push('disabled');
   if (isBPL || income < 5000) requiredGroups.push('bpl');
   if (isElderly)   requiredGroups.push('elderly');
@@ -61,6 +62,12 @@ async function getSchemesByTags(profile, limit) {
   if (caste === 'st') requiredGroups.push('st');
   if (caste === 'obc') requiredGroups.push('obc');
   if (isStudent || hasGirl) requiredGroups.push('students');
+  // Add goal-based groups
+  const goal = profile.financial_goal || '';
+  if (goal === 'housing') requiredGroups.push('housing');
+  if (goal === 'health')  requiredGroups.push('health');
+  if (goal === 'employment' || profile.occupation === 'unemployed') requiredGroups.push('employment');
+  if (goal === 'business' || profile.occupation === 'self_employed') requiredGroups.push('business');
 
   const results = [];
   const usedIds = new Set();
