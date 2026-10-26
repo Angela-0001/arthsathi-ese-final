@@ -106,33 +106,18 @@ router.post('/recommend', async (req, res, next) => {
 
     console.log(`[Recommend] ${new Date().toISOString()} user=${user_id} platform=web requesting schemes`);
 
-    // Try Groq AI recommendation if key is set
-    if (process.env.GROQ_API_KEY) {
-      try {
-        const { getRelevantSchemes } = require('../services/groqRecommendation');
-        const schemes = await getRelevantSchemes(user_id, limit);
-        if (schemes && schemes.length > 0) {
-          return res.json({ success: true, source: 'groq', data: schemes });
-        }
-      } catch (e) {
-        console.error('[Schemes] Groq error:', e.message);
+    // Profile-aware recommendation with mandatory slots
+    try {
+      const { getProfileSchemes } = require('../services/recommendationEngine');
+      const schemes = await getProfileSchemes(profile, limit);
+      if (schemes && schemes.length > 0) {
+        return res.json({ success: true, source: 'engine', data: schemes });
       }
+    } catch (e) {
+      console.error('[Schemes] Engine error:', e.message);
     }
 
-    // Try ML engine
-    const engineUp = await isEngineHealthy();
-    if (engineUp) {
-      try {
-        const result = await getRecommendations(user_id, { limit, itemType: 'scheme' });
-        if (result.schemes?.length > 0) {
-          return res.json({ success: true, source: 'engine', data: result.schemes });
-        }
-      } catch (e) {
-        console.error('[Schemes] Engine error:', e.message);
-      }
-    }
-
-    // DB fallback — filter schemes by basic profile criteria
+    // DB fallback
     const dbSchemes = await query(
       `SELECT id, scheme_id, name, description, category, ministry,
               min_age, max_age, max_income, benefit_value, application_url
@@ -143,7 +128,7 @@ router.post('/recommend', async (req, res, next) => {
          AND (max_income IS NULL OR max_income >= $2)
        ORDER BY engagement_weight DESC NULLS LAST
        LIMIT $3`,
-      [profile.age || 25, profile.monthly_income || 0, limit]
+      [profile.age || 25, profile.age || 25, limit]
     );
     return res.json({ success: true, source: 'db', data: dbSchemes.rows });
   } catch (err) {
@@ -175,10 +160,13 @@ router.get('/signals', async (req, res, next) => {
     const { user_id } = req.query;
     if (!user_id) return res.json({ success: true, boosts: {}, suppressions: {} });
 
+    const uid = parseInt(user_id, 10);
+    if (isNaN(uid)) return res.json({ success: true, boosts: {}, suppressions: {} });
+
     // Get this user's profile
     const userRes = await query(
       'SELECT occupation, caste_category FROM users WHERE id = $1',
-      [user_id]
+      [uid]
     );
     if (!userRes.rows.length) return res.json({ success: true, boosts: {}, suppressions: {} });
     const { occupation, caste_category } = userRes.rows[0];
@@ -186,16 +174,16 @@ router.get('/signals', async (req, res, next) => {
     // Find similar users (same occupation + caste)
     const similarRes = await query(
       `SELECT id FROM users WHERE occupation = $1 AND caste_category = $2 AND id != $3 LIMIT 100`,
-      [occupation, caste_category, user_id]
+      [occupation, caste_category, uid]
     );
     if (!similarRes.rows.length) return res.json({ success: true, boosts: {}, suppressions: {} });
-    const similarIds = similarRes.rows.map(r => r.id);
+    const similarIds = similarRes.rows.map(r => parseInt(r.id));
 
     // Get their interactions
     const intRes = await query(
       `SELECT item_id, interaction_type, COUNT(*) as cnt
        FROM item_interactions
-       WHERE user_id = ANY($1) AND item_type = 'scheme'
+       WHERE user_id = ANY($1::int[]) AND item_type = 'scheme'
        GROUP BY item_id, interaction_type`,
       [similarIds]
     );
@@ -324,35 +312,20 @@ insuranceRouter.post('/recommend', async (req, res, next) => {
       return res.status(400).json({ success: false, error: { code: 'INCOMPLETE_PROFILE', message: 'Profile incomplete', missingFields: completeness.missingFields } });
     }
 
-    console.log(`[Recommend] ${new Date().toISOString()} user=${user_id} platform=web requesting schemes`);
+    console.log(`[Recommend] ${new Date().toISOString()} user=${user_id} platform=web requesting insurance`);
 
-    // Try Groq AI recommendation if key is set
-    if (process.env.GROQ_API_KEY) {
-      try {
-        const { getRelevantInsurance } = require('../services/groqRecommendation');
-        const policies = await getRelevantInsurance(user_id, limit);
-        if (policies && policies.length > 0) {
-          return res.json({ success: true, source: 'groq', data: policies });
-        }
-      } catch (e) {
-        console.error('[Insurance] Groq error:', e.message);
+    // Use profile-aware recommendation engine
+    try {
+      const { getProfileInsurance } = require('../services/recommendationEngine');
+      const policies = await getProfileInsurance(profile, limit);
+      if (policies && policies.length > 0) {
+        return res.json({ success: true, source: 'engine', data: policies });
       }
+    } catch (e) {
+      console.error('[Insurance] Engine error:', e.message);
     }
 
-    // Try ML engine
-    const engineUp = await isEngineHealthy();
-    if (engineUp) {
-      try {
-        const result = await getRecommendations(user_id, { limit, itemType: 'insurance' });
-        if (result.insurance?.length > 0) {
-          return res.json({ success: true, source: 'engine', data: result.insurance });
-        }
-      } catch (e) {
-        console.error('[Insurance] Engine error:', e.message);
-      }
-    }
-
-    // DB fallback — filter by age
+    // DB fallback
     const allPolicies = await query(
       `SELECT id, source_id, name, description, category,
               annual_premium, coverage_amount, coverage_type,
@@ -361,8 +334,7 @@ insuranceRouter.post('/recommend', async (req, res, next) => {
        WHERE is_active = TRUE
          AND (min_age IS NULL OR min_age <= $1)
          AND (max_age IS NULL OR max_age >= $1)
-       ORDER BY annual_premium ASC NULLS FIRST
-       LIMIT $2`,
+       ORDER BY annual_premium ASC NULLS FIRST LIMIT $2`,
       [profile.age || 25, limit]
     );
     res.json({ success: true, source: 'db', data: allPolicies.rows });

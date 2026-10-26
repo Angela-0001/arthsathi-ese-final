@@ -164,13 +164,13 @@ async function sendAudio(ws, text, streamSid, seqRef) {
   }
 }
 
-// ── Fetch schemes + insurance using Groq AI ─────────────────────────────────
+// ── Fetch schemes + insurance using mandatory slots + Groq ───────────────────
 async function fetchRecommendations(profile) {
   const { query } = require('../db');
 
   const age    = profile.age    || 25;
   const income = profile.monthly_income || 0;
-  const isBPL  = ['aay','phh'].includes(profile.ration_card_type);
+  const isBPL      = ['aay','phh'].includes(profile.ration_card_type);
   const isFemale   = profile.gender === 'female';
   const isDisabled = profile.has_disability === true;
   const isWidow    = profile.is_widow === true;
@@ -178,132 +178,162 @@ async function fetchRecommendations(profile) {
   const isFarmer   = ['farmer','farm_laborer'].includes(profile.occupation);
   const isStudent  = profile.is_student === true;
   const hasGirl    = profile.has_girl_child === true;
+  const caste      = profile.caste_category || 'general';
+  const isNonGeneral = ['sc','st','obc','nt','vjnt'].includes(caste);
 
-  // Fetch schemes from DB — pre-filter by basic eligibility
-  const schemeRes = await query(
-    `SELECT id, name, description, category, min_age, max_age, max_income, benefit_value, application_url
-     FROM schemes WHERE is_active = TRUE
-       AND (min_age IS NULL OR min_age <= $1)
-       AND (max_age IS NULL OR max_age >= $1)
-       AND (max_income IS NULL OR max_income >= $2)
-     ORDER BY engagement_weight DESC NULLS LAST LIMIT 40`,
-    [age, income]
-  );
-  const allSchemes = schemeRes.rows;
+  const selectedIds = new Set();
+  const mandatorySchemes = [];
 
-  // Fetch insurance
+  // Helper: fetch best matching scheme for a keyword
+  async function fetchBest(keywords, limit = 1) {
+    const kw = keywords.map(k => `%${k}%`);
+    const conditions = kw.map((_, i) => `(name::text ILIKE $${i+3} OR description::text ILIKE $${i+3})`).join(' OR ');
+    const r = await query(
+      `SELECT id, name, description, category, benefit_value, application_url
+       FROM schemes WHERE is_active = TRUE AND (${conditions})
+         AND (min_age IS NULL OR min_age <= $1)
+         AND (max_age IS NULL OR max_age >= $1)
+         AND (max_income IS NULL OR max_income >= $2)
+       ORDER BY engagement_weight DESC NULLS LAST LIMIT ${limit}`,
+      [age, income, ...kw]
+    );
+    return r.rows.filter(s => !selectedIds.has(s.id));
+  }
+
+  // ── MANDATORY SLOTS ─────────────────────────────────────────────────────
+
+  // 1. Female-centric schemes (MUST for women)
+  if (isFemale) {
+    const r = await fetchBest(['mahila','women','beti','kanya','girl','female','widow','vidhwa','matru']);
+    r.slice(0,2).forEach(s => { selectedIds.add(s.id); mandatorySchemes.push(s); });
+  }
+
+  // 2. Widow schemes (MUST for widows)
+  if (isWidow) {
+    const r = await fetchBest(['vidhwa','widow','pension']);
+    r.slice(0,1).forEach(s => { if (!selectedIds.has(s.id)) { selectedIds.add(s.id); mandatorySchemes.push(s); } });
+  }
+
+  // 3. Disability schemes (MUST for disabled)
+  if (isDisabled) {
+    const r = await fetchBest(['divyang','disability','disabled','handicap','viklang']);
+    r.slice(0,1).forEach(s => { if (!selectedIds.has(s.id)) { selectedIds.add(s.id); mandatorySchemes.push(s); } });
+  }
+
+  // 4. Old age pension (MUST for elderly)
+  if (isElderly) {
+    const r = await fetchBest(['pension','old age','vridh','senior','bujurg']);
+    r.slice(0,1).forEach(s => { if (!selectedIds.has(s.id)) { selectedIds.add(s.id); mandatorySchemes.push(s); } });
+  }
+
+  // 5. BPL/poverty schemes (MUST for poor)
+  if (isBPL || income < 5000) {
+    const r = await fetchBest(['garib','poor','BPL','antyodaya','PMGKY','ration','food']);
+    r.slice(0,1).forEach(s => { if (!selectedIds.has(s.id)) { selectedIds.add(s.id); mandatorySchemes.push(s); } });
+  }
+
+  // 6. Caste-specific schemes (MUST for SC/ST/OBC)
+  if (isNonGeneral) {
+    const casteKeywords = { sc: ['SC','scheduled caste','dalit'], st: ['ST','scheduled tribe','tribal','adivasi'], obc: ['OBC','backward'] };
+    const r = await fetchBest(casteKeywords[caste] || ['backward','minority']);
+    r.slice(0,1).forEach(s => { if (!selectedIds.has(s.id)) { selectedIds.add(s.id); mandatorySchemes.push(s); } });
+  }
+
+  // 7. Farmer schemes (MUST for farmers)
+  if (isFarmer) {
+    const r = await fetchBest(['kisan','farmer','PM-KISAN','fasal','crop','agriculture']);
+    r.slice(0,1).forEach(s => { if (!selectedIds.has(s.id)) { selectedIds.add(s.id); mandatorySchemes.push(s); } });
+  }
+
+  // 8. Education/girl child (MUST if student or girl child)
+  if (isStudent || hasGirl) {
+    const r = await fetchBest(['scholarship','beti bachao','sukanya','education','padhai','chhatra']);
+    r.slice(0,1).forEach(s => { if (!selectedIds.has(s.id)) { selectedIds.add(s.id); mandatorySchemes.push(s); } });
+  }
+
+  console.log(`[VoiceBot] Mandatory schemes: ${mandatorySchemes.length}`);
+
+  // ── FILL REMAINING SLOTS WITH GROQ ──────────────────────────────────────
+  const remaining = Math.max(0, 5 - mandatorySchemes.length);
+  let extraSchemes = [];
+
+  if (remaining > 0) {
+    const eligibleRes = await query(
+      `SELECT id, name, category, benefit_value, application_url
+       FROM schemes WHERE is_active = TRUE
+         AND id NOT IN (${mandatorySchemes.length > 0 ? mandatorySchemes.map((_, i) => `$${i+3}`).join(',') : 'NULL'})
+         AND (min_age IS NULL OR min_age <= $1)
+         AND (max_age IS NULL OR max_age >= $1)
+         AND (max_income IS NULL OR max_income >= $2)
+       ORDER BY engagement_weight DESC NULLS LAST LIMIT 30`,
+      [age, income, ...mandatorySchemes.map(s => s.id)]
+    );
+    const eligible = eligibleRes.rows;
+
+    if (groq && eligible.length > 0) {
+      try {
+        const list = eligible.map((s, i) => {
+          const name = typeof s.name === 'object' ? (s.name.en || s.name.hi || '') : (s.name || '');
+          return `${i}|${name}|cat:${s.category}`;
+        }).join('\n');
+
+        const r = await groq.chat.completions.create({
+          model: MODEL,
+          messages: [{ role: 'user', content: `Pick ${remaining} most relevant schemes for: age ${age}, ${isFemale?'female':'male'}, ${caste}, ${profile.occupation}, income Rs.${income}. Reply ONLY with JSON indices: [0,1]\n${list}` }],
+          temperature: 0,
+          max_tokens: 50,
+        });
+
+        const raw   = r.choices[0]?.message?.content?.trim() || '[]';
+        const match = raw.match(/\[[\d,\s]+\]/);
+        const idxs  = match ? JSON.parse(match[0]) : [];
+        extraSchemes = idxs.filter(i => i >= 0 && i < eligible.length).slice(0, remaining).map(i => eligible[i]);
+      } catch (e) {
+        console.error('[VoiceBot] Groq extra schemes error:', e.message);
+        extraSchemes = eligible.slice(0, remaining);
+      }
+    } else {
+      extraSchemes = eligible.slice(0, remaining);
+    }
+  }
+
+  const schemes = [...mandatorySchemes, ...extraSchemes].slice(0, 5);
+  console.log('[VoiceBot] Final schemes:', schemes.map(s => typeof s.name === 'object' ? s.name.en : s.name));
+
+  // ── INSURANCE ────────────────────────────────────────────────────────────
   const insRes = await query(
     `SELECT id, name, description, category, annual_premium, coverage_amount, coverage_type, min_age, max_age, application_url
-     FROM insurance_policies WHERE is_active = TRUE`
+     FROM insurance_policies WHERE is_active = TRUE
+       AND (min_age IS NULL OR min_age <= $1)
+       AND (max_age IS NULL OR max_age >= $1)`,
+    [age]
   );
-  const allInsurance = insRes.rows;
+  const allIns = insRes.rows;
+  let insurance = [];
 
-  let schemes = [], insurance = [];
-
-  if (groq && allSchemes.length > 0) {
+  if (groq && allIns.length > 0) {
     try {
-      const schemeList = allSchemes.map((s, i) => {
-        const name = typeof s.name === 'object' ? (s.name.en || s.name.hi || 'Scheme') : (s.name || 'Scheme');
-        return `${i}|${name}|cat:${s.category}`;
+      const list = allIns.map((p, i) => {
+        const name = typeof p.name === 'object' ? (p.name.en || p.name.hi || '') : (p.name || '');
+        return `${i}|${name}|Rs.${p.annual_premium}/yr|${p.coverage_type}`;
       }).join('\n');
 
-      const prompt = `You are a government scheme eligibility expert for India. Select the 5 MOST RELEVANT schemes for this specific user.
-
-USER PROFILE:
-- Age: ${age}
-- Gender: ${isFemale ? 'FEMALE' : 'male'}
-- Caste: ${profile.caste_category || 'general'}
-- Occupation: ${profile.occupation}
-- Monthly income: Rs.${income}
-- BPL/Poor: ${isBPL ? 'YES - very poor family' : 'no'}
-- Ration card: ${profile.ration_card_type || 'none'}
-- Disability: ${isDisabled ? 'YES - disabled person' : 'no'}
-- Widow: ${isWidow ? 'YES - widow woman' : 'no'}
-- Girl child at home: ${hasGirl ? 'YES' : 'no'}
-- Student: ${isStudent ? 'YES' : 'no'}
-- Financial goal: ${profile.financial_goal}
-
-PRIORITY RULES:
-${isFemale ? '- MUST include women-focused schemes (mahila yojana, beti bachao, widow pension, etc.)' : ''}
-${isWidow ? '- MUST include widow pension/vidhwa yojana schemes' : ''}
-${isDisabled ? '- MUST include disability/divyang schemes' : ''}
-${isElderly ? '- MUST include old age pension/senior citizen schemes' : ''}
-${isBPL ? '- MUST include BPL/poverty relief schemes like Antyodaya, NFBS, PM Garib Kalyan' : ''}
-${isFarmer ? '- MUST include agricultural schemes like PM-KISAN, PMFBY' : ''}
-${isStudent || hasGirl ? '- MUST include education/scholarship schemes' : ''}
-- Check age eligibility (min_age <= ${age} <= max_age)
-- Check income eligibility (max_income >= ${income} or null)
-
-SCHEMES:
-${schemeList}
-
-Reply ONLY with JSON array of 5 indices: [3, 7, 12, 0, 5]`;
-
-      const completion = await groq.chat.completions.create({
+      const r = await groq.chat.completions.create({
         model: MODEL,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content: `Pick 3 best insurance for: age ${age}, income Rs.${income}, ${isFarmer?'farmer':'non-farmer'}, bank account: ${profile.has_bank_account?'yes':'no'}. Reply ONLY JSON: [0,1,2]\n${list}` }],
         temperature: 0,
-        max_tokens: 100,
+        max_tokens: 30,
       });
 
-      const raw   = completion.choices[0]?.message?.content?.trim() || '[]';
+      const raw   = r.choices[0]?.message?.content?.trim() || '[]';
       const match = raw.match(/\[[\d,\s]+\]/);
-      const indices = match ? JSON.parse(match[0]) : [];
-      schemes = indices.filter(i => i >= 0 && i < allSchemes.length).slice(0, 5).map(i => allSchemes[i]);
-      console.log('[VoiceBot] Groq selected schemes:', schemes.map(s => typeof s.name === 'object' ? s.name.en : s.name));
+      const idxs  = match ? JSON.parse(match[0]) : [];
+      insurance   = idxs.filter(i => i >= 0 && i < allIns.length).map(i => allIns[i]);
     } catch (e) {
-      console.error('[VoiceBot] Groq schemes error:', e.message);
+      insurance = allIns.slice(0, 3);
     }
-  }
-
-  // Fallback DB filter
-  if (schemes.length === 0) {
-    schemes = allSchemes.filter(s => {
-      if (s.min_age && age < s.min_age) return false;
-      if (s.max_age && age > s.max_age) return false;
-      if (s.max_income && income > s.max_income) return false;
-      return true;
-    }).slice(0, 5);
-  }
-
-  // Insurance with Groq
-  if (groq && allInsurance.length > 0) {
-    try {
-      const insList = allInsurance.map((p, i) => {
-        const name = typeof p.name === 'object' ? (p.name.en || p.name.hi || 'Insurance') : (p.name || 'Insurance');
-        return `${i}|${name}|premium:Rs.${p.annual_premium}|type:${p.coverage_type}`;
-      }).join('\n');
-
-      const prompt = `Select 3 most suitable insurance policies for:
-Age: ${age}, Gender: ${isFemale ? 'female' : 'male'}, Income: Rs.${income}/month, BPL: ${isBPL ? 'yes' : 'no'}, Farmer: ${isFarmer ? 'yes' : 'no'}, Has bank account: ${profile.has_bank_account ? 'yes' : 'no'}
-
-Policies:
-${insList}
-
-Reply ONLY with JSON array: [0, 2, 4]`;
-
-      const completion = await groq.chat.completions.create({
-        model: MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0,
-        max_tokens: 50,
-      });
-
-      const raw = completion.choices[0]?.message?.content?.trim() || '[]';
-      const match = raw.match(/\[[\d,\s]+\]/);
-      const indices = match ? JSON.parse(match[0]) : [];
-      insurance = indices.filter(i => i >= 0 && i < allInsurance.length).map(i => allInsurance[i]);
-    } catch (e) {
-      console.error('[VoiceBot] Groq insurance error:', e.message);
-    }
-  }
-
-  if (insurance.length === 0) {
-    insurance = allInsurance.filter(p => {
-      if (p.min_age && age < p.min_age) return false;
-      if (p.max_age && age > p.max_age) return false;
-      return true;
-    }).slice(0, 3);
+  } else {
+    insurance = allIns.slice(0, 3);
   }
 
   return { schemes, insurance };

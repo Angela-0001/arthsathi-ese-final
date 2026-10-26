@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ArthSathi OCR + Risk Analysis Pipeline"""
 import os, sys, re, json, logging, argparse
 from pathlib import Path
@@ -22,7 +23,7 @@ OLLAMA_HOST  = os.getenv("OLLAMA_HOST",  "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mistral")
 
 # ---------------------------------------------------------------------------
-# Direct text extraction (docx / pdf / txt) — no OCR needed
+# Direct text extraction (docx / pdf / txt) ï¿½ no OCR needed
 # ---------------------------------------------------------------------------
 def extract_text_from_file(file_path: str) -> str:
     ext = Path(file_path).suffix.lower()
@@ -105,7 +106,7 @@ def detect_risks_with_groq(text: str, language: str = "en") -> list:
         prompt = (
             "You are a financial document risk analyzer. Analyze the following document text and identify "
             "ONLY genuine financial or legal risks that could harm the signer/party. "
-            "Only flag risks that are ACTUALLY PRESENT in the text — do not invent or assume risks. "
+            "Only flag risks that are ACTUALLY PRESENT in the text ï¿½ do not invent or assume risks. "
             "If this is not a financial/legal agreement (e.g. a resume, letter, essay), return an empty list. "
             "Return ONLY a JSON array. Each element: "
             '{"risk_type": "short_name", "severity": "high|medium|low", '
@@ -148,7 +149,7 @@ def detect_risks_with_groq(text: str, language: str = "en") -> list:
         log.warning(f"Groq risk detection failed: {e}")
         return None
 
-# Stricter patterns — require multi-word financial context, not single common words
+# Stricter patterns ï¿½ require multi-word financial context, not single common words
 RISK_PATTERNS = [
     {"pattern": r"transfer\s+(?:of\s+)?ownership|transfer\s+(?:of\s+)?title|vest\s+(?:the\s+)?property",
      "risk_type": "ownership_transfer", "severity": "high",
@@ -219,7 +220,7 @@ def overall_risk_level(flags: list) -> str:
 # Summarization
 # ---------------------------------------------------------------------------
 def summarize_with_groq(text: str, language: str = "en") -> str:
-    """Use Groq API for summarization — much faster and no local install needed."""
+    """Use Groq API for summarization ï¿½ much faster and no local install needed."""
     api_key = os.getenv("GROQ_API_KEY", "")
     if not api_key:
         return None
@@ -338,7 +339,7 @@ def process_document(image_path: str, language: str = "en", question: str = None
                 result["success"] = True
                 return result
 
-        # 3. Risk detection — try Groq (contextual) first, fall back to regex
+        # 3. Risk detection ï¿½ try Groq (contextual) first, fall back to regex
         groq_flags = detect_risks_with_groq(result["raw_text"], language)
         if groq_flags is not None:
             log.info(f"Groq risk detection: {len(groq_flags)} flags")
@@ -348,7 +349,7 @@ def process_document(image_path: str, language: str = "en", question: str = None
         result["risk_flags"] = risk_flags
         result["risk_level"] = overall_risk_level(risk_flags)
 
-        # 4. Summarize — try Groq first, fall back to rule-based
+        # 4. Summarize ï¿½ try Groq first, fall back to rule-based
         llm_summary = summarize_with_groq(result["raw_text"], language)
         result["summary"] = llm_summary if llm_summary else summarize_rule_based(result["raw_text"], risk_flags)
 

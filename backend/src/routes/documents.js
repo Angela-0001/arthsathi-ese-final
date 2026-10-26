@@ -136,6 +136,8 @@ router.post('/upload', upload.single('document'), async (req, res, next) => {
           );
         } catch {
           // Fallback to document_analyses
+          const highCount   = riskFlags.filter(f => f.severity === 'high' || f.severity === 'critical').length;
+          const mediumCount = riskFlags.filter(f => f.severity === 'medium').length;
           await query(
             `UPDATE document_analyses SET
               raw_text          = $1,
