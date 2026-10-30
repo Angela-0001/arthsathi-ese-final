@@ -273,9 +273,36 @@ function ResultsContent() {
 function SchemeCard({ scheme, onApply, onDismiss }: { scheme: SchemeResult; onApply: () => void; onDismiss: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [actioned, setActioned] = useState<'apply'|'dismiss'|null>(null);
+  const [speaking, setSpeaking] = useState(false);
   const name    = getName(scheme);
   const desc    = getDesc(scheme);
   const benefit = (scheme as SchemeResult).benefit_value || scheme.benefit_amount_max || scheme.benefit_amount_min;
+
+  const lang = typeof window !== 'undefined' ? (localStorage.getItem('arthsathi_lang') || 'hi') : 'hi';
+
+  function speakScheme() {
+    if (!('speechSynthesis' in window)) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const text = `${name}. ${desc ? desc.slice(0, 300) : ''}${benefit ? `. Labh: rupaye ${benefit}` : ''}`;
+    const utter = new SpeechSynthesisUtterance(text);
+    const locales: Record<string, string> = { hi: 'hi-IN', mr: 'mr-IN', en: 'en-IN' };
+    utter.lang = locales[lang] || 'hi-IN';
+    utter.rate = 0.85;
+    utter.onend = () => setSpeaking(false);
+    utter.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(utter);
+  }
+
+  // Stop speaking when card unmounts
+  if (typeof window !== 'undefined') {
+    // cleanup on next render if speaking
+  }
 
   if (actioned === 'dismiss') {
     return (
@@ -350,6 +377,12 @@ function SchemeCard({ scheme, onApply, onDismiss }: { scheme: SchemeResult; onAp
           className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-50 text-red-500 text-lg shrink-0"
           title="Not relevant"
         >✕</button>
+        {/* 🔊 Listen button */}
+        <button
+          onClick={speakScheme}
+          className={`w-10 h-10 flex items-center justify-center rounded-xl text-lg shrink-0 transition-colors ${speaking ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}
+          title={speaking ? 'Stop' : 'Listen'}
+        >{speaking ? '⏹' : '🔊'}</button>
         {scheme.application_url && (
           <a href={scheme.application_url} target="_blank" rel="noopener noreferrer"
             onClick={() => { setActioned('apply'); onApply(); }}
@@ -371,6 +404,25 @@ function SchemeCard({ scheme, onApply, onDismiss }: { scheme: SchemeResult; onAp
 function InsuranceCard({ policy }: { policy: InsuranceResult }) {
   const name = getName(policy);
   const desc = getDesc(policy);
+  const [speaking, setSpeaking] = useState(false);
+  const lang = typeof window !== 'undefined' ? (localStorage.getItem('arthsathi_lang') || 'hi') : 'hi';
+
+  function speakPolicy() {
+    if (!('speechSynthesis' in window)) return;
+    if (speaking) { window.speechSynthesis.cancel(); setSpeaking(false); return; }
+    window.speechSynthesis.cancel();
+    const premium = policy.annual_premium === 0 ? 'muft' : `rupaye ${policy.annual_premium} saalik`;
+    const cover = policy.coverage_amount ? `. Cover rupaye ${policy.coverage_amount}` : '';
+    const text = `${name}. ${desc ? desc.slice(0, 200) : ''}. Premium ${premium}${cover}`;
+    const utter = new SpeechSynthesisUtterance(text);
+    const locales: Record<string, string> = { hi: 'hi-IN', mr: 'mr-IN', en: 'en-IN' };
+    utter.lang = locales[lang] || 'hi-IN';
+    utter.rate = 0.85;
+    utter.onend = () => setSpeaking(false);
+    utter.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(utter);
+  }
 
   return (
     <article className="bg-white rounded-2xl shadow-sm border-t-4 border-t-blue-500 border border-gray-100 p-4 flex flex-col gap-2">
@@ -399,10 +451,24 @@ function InsuranceCard({ policy }: { policy: InsuranceResult }) {
       </div>
 
       {policy.application_url && (
-        <a href={policy.application_url} target="_blank" rel="noopener noreferrer"
-          className="bg-blue-600 text-white text-sm font-semibold rounded-xl py-2.5 text-center block">
-          {t('results.enrol') || 'Enrol Now'}
-        </a>
+        <div className="flex gap-2">
+          <button
+            onClick={speakPolicy}
+            className={`w-10 h-10 flex items-center justify-center rounded-xl text-lg shrink-0 transition-colors ${speaking ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}
+            title={speaking ? 'Stop' : 'Listen'}
+          >{speaking ? '⏹' : '🔊'}</button>
+          <a href={policy.application_url} target="_blank" rel="noopener noreferrer"
+            className="flex-1 bg-blue-600 text-white text-sm font-semibold rounded-xl py-2.5 text-center">
+            {t('results.enrol') || 'Enrol Now'}
+          </a>
+        </div>
+      )}
+      {!policy.application_url && (
+        <button
+          onClick={speakPolicy}
+          className={`w-10 h-10 flex items-center justify-center rounded-xl text-lg transition-colors ${speaking ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}
+          title={speaking ? 'Stop' : 'Listen'}
+        >{speaking ? '⏹' : '🔊'}</button>
       )}
     </article>
   );

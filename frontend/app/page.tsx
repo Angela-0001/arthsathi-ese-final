@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { t, initLanguage, setLanguage, LANGUAGES, type LanguageCode } from '@/i18n';
+import { useNavigate } from '@/hooks/useNavigate';
 
 export default function Homepage() {
   const router = useRouter();
+  const { navigate, navigating } = useNavigate();
   const [mounted, setMounted] = useState(false);
   const [lang, setLang] = useState<LanguageCode>('hi');
 
@@ -56,9 +58,11 @@ export default function Homepage() {
           <p className="text-xl text-white/90 mb-3 max-w-xl mx-auto">{t('home.hero_sub')}</p>
           <p className="text-white/70 text-sm mb-8">{t('home.hero_sub2')}</p>
           <button
-            onClick={() => router.push('/auth')}
-            className="bg-white text-primary font-bold text-lg px-8 py-4 rounded-2xl shadow-xl hover:bg-white/90 transition-colors"
+            onClick={() => navigate('/auth')}
+            disabled={navigating}
+            className="bg-white text-primary font-bold text-lg px-8 py-4 rounded-2xl shadow-xl hover:bg-white/90 transition-all active:scale-95 flex items-center gap-3 mx-auto"
           >
+            {navigating ? <span className="spinner spinner-green" /> : null}
             {t('home.get_started')}
           </button>
         </div>

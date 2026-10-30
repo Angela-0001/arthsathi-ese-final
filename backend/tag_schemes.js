@@ -93,9 +93,10 @@ const GROUP_RULES = {
   ],
   elderly: [
     'elderly', 'old age', 'senior citizen', 'aged', 'vridh', 'vrishth',
-    'pension', 'pensioner', 'geriatric', '60 years', '65 years', 'above 60',
-    'above 65', 'varishtha', 'pradhan mantri vaya', 'ignoap', 'national old age',
-    'indira gandhi national old',
+    'pension', 'pensioner', 'geriatric', '50 years', '55 years', '60 years', '65 years',
+    'above 50', 'above 55', 'above 60', 'above 65',
+    'varishtha', 'pradhan mantri vaya', 'ignoap', 'national old age',
+    'indira gandhi national old', 'old age home', 'senior',
   ],
   farmers: [
     'farmer', 'farmers', 'kisan', 'kisaan', 'agriculture', 'agricultural',

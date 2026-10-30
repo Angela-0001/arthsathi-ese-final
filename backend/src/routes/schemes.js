@@ -111,6 +111,19 @@ router.post('/recommend', async (req, res, next) => {
       const { getProfileSchemes } = require('../services/recommendationEngine');
       const schemes = await getProfileSchemes(profile, limit);
       if (schemes && schemes.length > 0) {
+        // Translate to user's preferred language
+        const lang = profile.preferred_language || 'hi';
+        if (lang !== 'en') {
+          try {
+            const { translateScheme } = require('../services/translationService');
+            const translated = await Promise.all(
+              schemes.map(s => translateScheme(s, lang).catch(() => s))
+            );
+            return res.json({ success: true, source: 'engine', data: translated });
+          } catch (te) {
+            console.warn('[Schemes] Translation error:', te.message);
+          }
+        }
         return res.json({ success: true, source: 'engine', data: schemes });
       }
     } catch (e) {
@@ -319,6 +332,16 @@ insuranceRouter.post('/recommend', async (req, res, next) => {
       const { getProfileInsurance } = require('../services/recommendationEngine');
       const policies = await getProfileInsurance(profile, limit);
       if (policies && policies.length > 0) {
+        const lang = profile.preferred_language || 'hi';
+        if (lang !== 'en') {
+          try {
+            const { translateScheme } = require('../services/translationService');
+            const translated = await Promise.all(
+              policies.map(p => translateScheme(p, lang).catch(() => p))
+            );
+            return res.json({ success: true, source: 'engine', data: translated });
+          } catch {}
+        }
         return res.json({ success: true, source: 'engine', data: policies });
       }
     } catch (e) {

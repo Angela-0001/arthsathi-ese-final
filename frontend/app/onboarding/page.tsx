@@ -437,8 +437,10 @@ export default function OnboardingPage() {
 
       {/* Navigation */}
       <div className="px-5 pb-8 pt-2 space-y-3 safe-padding border-t border-gray-100">
-        <button onClick={handleNext} disabled={submitting} className="btn-primary">
-          {submitting ? (common(qData,'loading')||'Loading...') : isLast ? commonFinish : commonNext}
+        <button onClick={handleNext} disabled={submitting} className="btn-primary ripple-container">
+          {submitting
+            ? <><span className="spinner" />{common(qData,'loading')||'Loading...'}</>
+            : isLast ? commonFinish : commonNext}
         </button>
         {stepIdx > 0 && (
           <button
