@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Fix backend issues: (1) Telegram/WhatsApp bots give generic scheme lists instead of user-profile-based recommendations, (2) profileService.fetchUserProfile only queries users table but misses financial_profiles data (occupation/income/caste), (3) PDF upload silently rejected by multer, (4) documents.js GET response missing llm_model_used field, (5) IVR trimmed to 3 languages. These are all backend-only changes independent of FEAT-001/002.",
+  "status": "pending",
+  "steps": [
+    "1. Read backend/src/services/profileService.js fully (already done — it queries only users table). Add a fetchFullProfile(userId) function that does SELECT u.*, fp.age, fp.gender, fp.caste_category, fp.occupation, fp.monthly_income, fp.annual_income, fp.has_bank_account, fp.ration_card_type, fp.financial_goal FROM users u LEFT JOIN financial_profiles fp ON fp.user_id = u.id WHERE u.id = $1. Cache this combined result under the same key pattern.",
+    "2. Read backend/src/routes/telegram.js fetchTopSchemes(). Replace the generic ORDER BY last_scraped_at query with a user-profile-aware query. Add a lookupUserByPhone(phone) helper that queries SELECT id FROM users WHERE phone_number = $1. In the b.on('text') handler and b.command('schemes') handler: look up userId from ctx.from.id via a telegram_users lookup OR from the phone (if available). If found, call require('../services/engineService').getRecommendations(userId, {limit:5}) instead of the raw DB query. If no userId found, fall back to the existing generic query. The formatSchemes function already handles multilingual name/description objects correctly.",
+    "3. Read backend/src/routes/whatsapp.js similarly. In the webhook handler: extract the From phone number (req.body.From, which is 'whatsapp:+91XXXXXXXXXX'). Strip the 'whatsapp:' prefix and look up the user. Call getRecommendations(userId) if found, fall back to the raw query otherwise.",
+    "4. In backend/src/routes/documents.js multer fileFilter: add 'application/pdf' to the allowed array: const allowed = ['image/jpeg','image/png','image/webp','image/bmp','image/tiff','application/pdf']. Check if pdf-parse is installed (look in backend/package.json). If not, install it with 'npm install pdf-parse@1.1.1 --save'. In ocrService (backend/src/services/ocrService.js), add a PDF text extraction path: if file extension is .pdf, use pdf-parse to extract text instead of Tesseract OCR.",
+    "5. In backend/src/routes/documents.js GET /:id handler: add 'llm_model_used: doc.llm_model || \"groq\"' to the response data object. Also check if 'conversation_history' column exists in document_analyses table — if not, return an empty array [].",
+    "6. In backend/src/routes/ivr.js: change KEY_TO_LANG to { '1': 'hi', '2': 'mr', '3': 'en' }. Update LANG_GREETINGS to only keep hi/mr/en keys. Update LANG_NAMES to only keep hi/mr/en. Update the voice prompt in the /voice route to say '1 for Hindi, 2 for Marathi, 3 for English' (remove mentions of Tamil, Telugu, Bengali). Remove ta/te/bn from all script helper functions (ageQuestion, genderQuestion, casteQuestion, occupationQuestion, incomeQuestion, bankQuestion, resultsIntro, schemesHeader, insuranceHeader, noSchemesMsg, closing). Add proper Marathi strings to functions that were missing them (verify each function has a 'mr' key).",
+    "7. Run backend tests: cd backend && npm test"
+  ],
+  "acceptance_criteria": [
+    "profileService.fetchFullProfile(userId) returns merged user+financial_profiles data including monthly_income, occupation, caste_category.",
+    "Telegram /schemes command returns schemes filtered by the requesting user's profile, not a generic list.",
+    "WhatsApp message response returns schemes filtered by the sender's phone-matched user profile.",
+    "Uploading a PDF via /api/documents/upload returns 202 processing response (not 400 file type error).",
+    "GET /api/documents/:id response includes 'llm_model_used' field.",
+    "IVR POST /api/ivr/voice returns TwiML with a 3-option language menu (Hindi/Marathi/English only).",
+    "npm test passes in backend/."
+  ],
+  "verification": [
+    "cd c:\\Users\\angel\\Desktop\\ArthSathiFinal\\backend && npm test",
+    "curl -X POST http://localhost:3001/api/ivr/voice -H 'Content-Type: application/x-www-form-urlencoded' | findstr /i \"Hindi Marathi English\""
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

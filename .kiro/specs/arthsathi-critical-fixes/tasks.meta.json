@@ -1,0 +1,676 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Create frontend/lib/config.ts with ConfigManager singleton: detects localhost (->http://localhost:3001), LAN IP (->http://hostname:3001), production (->NEXT_PUBLIC_API_URL), SSR (->localhost:3001). Validates URL, caches for session, throws ConfigurationError if invalid.": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512351254
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512380759
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512790234
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512803257
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512977744
+      }
+    ],
+    "1.2 Update frontend/.env.local to set NEXT_PUBLIC_API_URL=http://localhost:3001": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512351507
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792513009209
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792513049987
+      }
+    ],
+    "1.3 Search all frontend files for hardcoded \"192.168.45.161\" or direct NEXT_PUBLIC_API_URL usage, replace with ConfigManager.getInstance().getApiUrl()": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512351595
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792513069420
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792513491961
+      }
+    ],
+    "1.4 Verify auth, results, document, and onboarding pages all use ConfigManager for API calls": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512351674
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792513514560
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792513524933
+      }
+    ],
+    "1.5 Test frontend connects to backend without ERR_CONNECTION_TIMED_OUT": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512351751
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792513545195
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792513649428
+      }
+    ],
+    "2.1 Create backend/src/services/profileService.js with fetchUserProfile(userId): query users table, 5-min cache via Map, ProfileNotFoundError for missing users": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512351824
+      },
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792513665202
+      },
+      {
+        "executionId": "2f413db4-a574-4f4a-97d4-5111b668ef37",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792517560343
+      },
+      {
+        "executionId": "2f413db4-a574-4f4a-97d4-5111b668ef37",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792517797789
+      }
+    ],
+    "2.2 Add updateProfile(userId, updates): updates DB and invalidates cache": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512352057
+      },
+      {
+        "executionId": "2f413db4-a574-4f4a-97d4-5111b668ef37",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792517807973
+      },
+      {
+        "executionId": "2f413db4-a574-4f4a-97d4-5111b668ef37",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792517821228
+      }
+    ],
+    "2.3 Add isProfileComplete(profile): checks mandatory fields (age, gender, state, occupation, monthly_income, caste_category, goals), returns { isValid, missingFields }": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512352198
+      },
+      {
+        "executionId": "2f413db4-a574-4f4a-97d4-5111b668ef37",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792517836004
+      },
+      {
+        "executionId": "2f413db4-a574-4f4a-97d4-5111b668ef37",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792517854630
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518103734
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518111828
+      }
+    ],
+    "2.4 Add validateProfile(profile): validates age 0-120, income non-negative, caste in [general, obc, sc, st, nt, vjnt], language in [en, hi, mr], valid Indian state": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512352285
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518119763
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518129758
+      }
+    ],
+    "2.5 Write unit test: fetchUserProfile returns correct data for user 1, error for invalid ID, cache hit/miss works": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512352370
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518138171
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518557219
+      }
+    ],
+    "3.1 Update groqRecommendation.js to use ProfileService.fetchUserProfile instead of direct DB query": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512352449
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518565904
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518659023
+      }
+    ],
+    "3.2 Update schemes.js POST /recommend: require user_id, fetch profile via ProfileService, return 400 with missing fields if incomplete, log requests": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512352517
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518667276
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518761261
+      }
+    ],
+    "3.3 Update insurance recommend endpoint similarly": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512352634
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518767674
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518776035
+      }
+    ],
+    "3.4 Verify fallback chain (Groq to ML Engine to DB filtering) all use profile data": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512352804
+      },
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518784475
+      }
+    ],
+    "3.5 Test with two different profiles (disabled female SC vs able-bodied male general), verify different schemes returned": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512352872
+      }
+    ],
+    "4.1 Review auth/page.tsx to understand how user ID is stored after login (localStorage, cookie, context)": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512352969
+      }
+    ],
+    "4.2 Update results/page.tsx: get user_id from session (not hardcoded 1), call recommend endpoints with real user_id, add loading spinner and error retry": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353073
+      }
+    ],
+    "4.3 Update onboarding/page.tsx to save to correct logged-in user ID": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353148
+      }
+    ],
+    "4.4 Remove ALL hardcoded user_id: 1, userId: 1, id: 1 references across frontend": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353218
+      }
+    ],
+    "4.5 Test: login, complete onboarding, view results, schemes match that user profile": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353294
+      }
+    ],
+    "5.1 Review backend/src/routes/documents.js and ocrService.js": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353364
+      }
+    ],
+    "5.2 Fix backend: validate file type (jpeg/png/webp/pdf) and size (10MB max), ensure Tesseract from env, add confidence check (60 min), add risk patterns, Groq summary, store in DB": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353430
+      }
+    ],
+    "5.3 Fix frontend document/page.tsx: use ConfigManager, handle 400/500 errors, display results (summary, risk flags, risk level), add loading state, compress images to 2MB": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353495
+      }
+    ],
+    "5.4 Test: upload clear document then get summary and risk flags; upload blurry then get clear error": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353565
+      }
+    ],
+    "6.1 Review bot/src/telegram.js and backend/src/routes/telegram.js": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353634
+      }
+    ],
+    "6.2 Implement telegram_user_id to application user_id mapping (create table if needed, store mapping on first interaction)": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353702
+      }
+    ],
+    "6.3 Update scheme/insurance handlers to look up real user_id and call recommend endpoint (remove hardcoded IDs)": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353772
+      }
+    ],
+    "6.4 Add bot commands: /start, /schemes, /insurance, /profile, /roadmap, /language": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512353883
+      }
+    ],
+    "6.5 Add /language command to switch language (en/hi/mr), store in user profile": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512354104
+      }
+    ],
+    "6.6 Format recommendations as Telegram messages with inline buttons": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512354177
+      }
+    ],
+    "6.7 Test: different Telegram users get different scheme recommendations": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512354247
+      }
+    ],
+    "7.1 Review bot/src/whatsapp.js and backend/src/routes/whatsapp.js": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512354315
+      }
+    ],
+    "7.2 Implement whatsapp_user_id to application user_id mapping (store on first interaction)": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512354387
+      }
+    ],
+    "7.3 Update scheme/insurance handlers to use real user_id (remove hardcoded IDs)": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512354462
+      }
+    ],
+    "7.4 Add financial roadmap option to WhatsApp menu": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512354534
+      }
+    ],
+    "7.5 Add language detection from first message, store in user profile": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512354627
+      }
+    ],
+    "7.6 Format as WhatsApp interactive list messages": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512354743
+      }
+    ],
+    "7.7 Test: WhatsApp users get profile-based recommendations": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512354851
+      }
+    ],
+    "8.1 Audit all frontend pages for hardcoded English strings": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355133
+      }
+    ],
+    "8.2 Update en.json, hi.json, mr.json with all missing keys, organized into namespaces (common, schemes, insurance, dashboard, errors, roadmap, documents)": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355210
+      }
+    ],
+    "8.3 Fix language switching: update all visible text without full page reload, persist in localStorage, add smooth navbar transition": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355295
+      }
+    ],
+    "8.4 Verify Navbar, results, document, onboarding, auth all fully translate": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355371
+      }
+    ],
+    "8.5 Test: switch to Hindi then all Hindi; switch to Marathi then all Marathi; no English remnants": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355449
+      }
+    ],
+    "9.1 Create backend/src/services/roadmapService.js with generate(userId): fetch profile (400 if no income), calculate financial state, parse goals, get eligible schemes/insurance, generate actions by timeframe, build timeline": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355534
+      }
+    ],
+    "9.2 Create backend/src/routes/roadmap.js with GET /api/roadmap/:userId": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355615
+      }
+    ],
+    "9.3 Wire roadmap route into app.js": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355683
+      }
+    ],
+    "9.4 Test: GET /api/roadmap/1 returns structured roadmap with actions and timeline": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355763
+      }
+    ],
+    "10.1 Create frontend/app/roadmap/page.tsx: fetch user_id, call GET /api/roadmap/:userId, display snapshot card, action sections (immediate/short/long), timeline, loading/empty states, green theme": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355827
+      }
+    ],
+    "10.2 Add Financial Roadmap to Navbar with smooth navigation, add translation keys": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512355893
+      }
+    ],
+    "10.3 Add roadmap translations to i18n files in roadmap namespace (en/hi/mr)": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356008
+      }
+    ],
+    "10.4 Test: navigate to /roadmap then see personalized financial plan": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356137
+      }
+    ],
+    "11.1 Audit backend for hardcoded API keys, user IDs, URLs, ports, bot tokens": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356268
+      }
+    ],
+    "11.2 Move all found values to backend/.env with sensible defaults": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356344
+      }
+    ],
+    "11.3 Add startup validation in app.js: check critical env vars, fail fast with clear message if missing": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356427
+      }
+    ],
+    "11.4 Audit frontend for hardcoded API URLs, phone numbers, bot usernames": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356496
+      }
+    ],
+    "11.5 Add rate limiting env vars (RATE_LIMIT_PER_HOUR=100, BOT_RATE_LIMIT_PER_MIN=10)": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356577
+      }
+    ],
+    "11.6 Test: app starts normally with correct env; fails clearly if critical var removed": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356645
+      }
+    ],
+    "12.1 Improve /health endpoint: check DB, Groq, ML engine status, return degraded state": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356714
+      }
+    ],
+    "12.2 Add global error handler middleware in app.js: catch unhandled errors, log stack traces, sanitize for production": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356796
+      }
+    ],
+    "12.3 Frontend: add error boundary per page, retry button on timeout (30s), offline indicator, cached data fallback": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356869
+      }
+    ],
+    "12.4 Backend: exponential backoff retry for DB failures (3 attempts: 1s, 2s, 4s)": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512356942
+      }
+    ],
+    "12.5 Test: kill backend then offline indicator; restart then recovers": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512357057
+      }
+    ],
+    "13.1 Test web flow: Register then Onboarding then Login then View personalized schemes": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512358035
+      }
+    ],
+    "13.2 Test document flow: clear upload then analysis then risk flags; blurry then error": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512358119
+      }
+    ],
+    "13.3 Test Telegram: /schemes then profile-based; /roadmap then plan; /language then switch": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512358190
+      }
+    ],
+    "13.4 Test WhatsApp: schemes then profile-based; roadmap then plan": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512358260
+      }
+    ],
+    "13.5 Test financial roadmap: /roadmap then personalized plan with actions and timeline": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512358325
+      }
+    ],
+    "13.6 Test language switching: en then hi (all text) then mr (all text) then en": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512358397
+      }
+    ],
+    "13.7 Test profile filtering: two users with different profiles (disabled/able, male/female, SC/general) get DIFFERENT recommendations on web, Telegram, WhatsApp": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512358456
+      }
+    ],
+    "13.8 Fix any bugs found during testing": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512358522
+      }
+    ],
+    "13.9 Verify no hardcoded user IDs remain in codebase": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792512358594
+      }
+    ],
+    "1. Fix Frontend API URL Configuration": [
+      {
+        "executionId": "2774109b-d2fb-45af-a824-b32482823002",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792513650890
+      }
+    ],
+    "2. Create Centralized Profile Service (Backend)": [
+      {
+        "executionId": "7779e6b5-65af-4486-beb0-e5c6f8249fb8",
+        "chatSessionId": "sess_10b52180-eb60-42b4-9e2c-1b1b7cb4951b",
+        "timestamp": 1792518557451
+      }
+    ]
+  }
+}

@@ -104,7 +104,10 @@ router.put('/:id', async (req, res, next) => {
       [preferred_language, full_name, state, req.body.whatsapp_number || null, req.params.id]
     );
     if (!r.rows[0]) return res.status(404).json({ success: false, error: { code: 'USER_NOT_FOUND', message: 'Not found' } });
-    invalidateUserCache(req.params.id); // bust recommendation cache on profile change
+    invalidateUserCache(req.params.id); // bust recommendation cache
+    // Also clear profile service cache so next recommendation uses fresh profile
+    const { clearCache } = require('../services/profileService');
+    clearCache(req.params.id);
     res.json({ success: true, data: r.rows[0] });
   } catch (err) { next(err); }
 });
@@ -159,6 +162,8 @@ router.post('/:id/profile', async (req, res, next) => {
 
     if (!r.rows[0]) return res.status(404).json({ success: false, error: { code: 'USER_NOT_FOUND', message: 'User not found' } });
     invalidateUserCache(uid); // bust recommendation cache on profile change
+    const { clearCache } = require('../services/profileService');
+    clearCache(uid);
     res.status(200).json({ success: true, data: r.rows[0] });
   } catch (err) { next(err); }
 });

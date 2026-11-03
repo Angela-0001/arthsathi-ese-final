@@ -291,6 +291,9 @@ export default function OnboardingPage() {
         }),
       });
       if (!pRes.ok) throw new Error('Could not save profile');
+      // Clear results cache so fresh recommendations load based on new profile
+      localStorage.removeItem('as_results_v3');
+      localStorage.removeItem('as_profile');
       router.push('/results');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error';

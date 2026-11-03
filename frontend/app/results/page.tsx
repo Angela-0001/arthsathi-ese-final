@@ -33,9 +33,21 @@ interface InsuranceResult {
   source?: string;
 }
 
-function saveCache(d: unknown) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: d, ts: Date.now() })); } catch {}
+// Clear old cache when lang changes so translated schemes reload
+const currentLang = typeof window !== 'undefined' ? (localStorage.getItem('arthsathi_lang') || 'hi') : 'hi';
+const cachedLang = typeof window !== 'undefined' ? localStorage.getItem('as_results_lang') : null;
+if (cachedLang && cachedLang !== currentLang) {
+  localStorage.removeItem('as_results_v3');
 }
+
+function saveCache(d: unknown) {
+  try {
+    const lang = typeof window !== 'undefined' ? (localStorage.getItem('arthsathi_lang') || 'hi') : 'hi';
+    localStorage.setItem('as_results_v3', JSON.stringify({ data: d, ts: Date.now() }));
+    localStorage.setItem('as_results_lang', lang);
+  } catch {}
+}
+
 function loadCache() {
   try {
     const r = localStorage.getItem(CACHE_KEY);
@@ -95,7 +107,6 @@ function SourceBadge({ source }: { source?: string }) {
 }
 
 function ResultsContent() {
-  useEffect(() => { initLanguage(); }, []);
   const router = useRouter();
   const [schemes,   setSchemes]   = useState<SchemeResult[]>([]);
   const [insurance, setInsurance] = useState<InsuranceResult[]>([]);
@@ -103,6 +114,8 @@ function ResultsContent() {
   const [offline,   setOffline]   = useState(false);
   const [tab,       setTab]       = useState<'schemes'|'insurance'>('schemes');
   const [signals,   setSignals]   = useState<{boosts: Record<string,number>, suppressions: Record<string,number>}>({ boosts: {}, suppressions: {} });
+
+  useEffect(() => { initLanguage(); }, []);
 
   const logInteraction = useCallback(async (schemeId: string, action: 'apply' | 'dismiss') => {
     const userId = localStorage.getItem('as_user_id');

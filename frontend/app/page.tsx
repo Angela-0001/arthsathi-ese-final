@@ -5,6 +5,90 @@ import { useRouter } from 'next/navigation';
 import { t, initLanguage, setLanguage, LANGUAGES, type LanguageCode } from '@/i18n';
 import { useNavigate } from '@/hooks/useNavigate';
 
+// ── How-to-use content ────────────────────────────────────────────────────────
+const HOW_TO: Record<string, { title: string; voice: string; steps: { icon: string; h: string; d: string }[] }> = {
+  hi: {
+    title: 'ArthSathi कैसे इस्तेमाल करें?',
+    voice: 'ArthSathi इस्तेमाल करना बहुत आसान है। पहले अपनी भाषा चुनें। फिर मोबाइल नंबर डालकर लॉगिन करें। अपनी जानकारी भरें जैसे उम्र, जाति, काम और आमदनी। फिर आपके लिए सरकारी योजनाएं और बीमा दिखाई देंगे। कोई भी कागज की फोटो खींचकर जोखिम जांच सकते हैं। और अपना वित्तीय रोडमैप भी देख सकते हैं।',
+    steps: [
+      { icon: '🌐', h: 'भाषा चुनें', d: 'हिंदी, मराठी या अंग्रेजी में से अपनी भाषा चुनें' },
+      { icon: '📱', h: 'लॉगिन करें', d: 'अपना मोबाइल नंबर डालें और लॉगिन करें' },
+      { icon: '📝', h: 'जानकारी भरें', d: 'उम्र, लिंग, जाति, काम और आमदनी बताएं' },
+      { icon: '🌾', h: 'योजनाएं देखें', d: 'आपके लिए सरकारी योजनाएं और बीमा दिखेंगे' },
+      { icon: '🔊', h: 'सुनें', d: 'हर योजना पर 🔊 दबाएं — हम बोलकर बताएंगे' },
+      { icon: '📄', h: 'दस्तावेज जांचें', d: 'कागज की फोटो खींचें — जोखिम पता करें' },
+    ],
+  },
+  mr: {
+    title: 'ArthSathi कसे वापरायचे?',
+    voice: 'ArthSathi वापरणे खूप सोपे आहे. प्रथम तुमची भाषा निवडा. मग मोबाइल नंबर टाकून लॉगिन करा. तुमची माहिती भरा. मग तुमच्यासाठी सरकारी योजना आणि विमा दाखवले जातील. कोणत्याही कागदाचा फोटो काढून जोखीम तपासू शकता.',
+    steps: [
+      { icon: '🌐', h: 'भाषा निवडा', d: 'हिंदी, मराठी किंवा इंग्रजी निवडा' },
+      { icon: '📱', h: 'लॉगिन करा', d: 'मोबाइल नंबर टाका आणि लॉगिन करा' },
+      { icon: '📝', h: 'माहिती भरा', d: 'वय, लिंग, जात, काम आणि उत्पन्न सांगा' },
+      { icon: '🌾', h: 'योजना पाहा', d: 'तुमच्यासाठी सरकारी योजना आणि विमा दाखवले जातील' },
+      { icon: '🔊', h: 'ऐका', d: 'प्रत्येक योजनेवर 🔊 दाबा — आम्ही सांगू' },
+      { icon: '📄', h: 'कागद तपासा', d: 'कागदाचा फोटो काढा — जोखीम कळेल' },
+    ],
+  },
+  en: {
+    title: 'How to use ArthSathi?',
+    voice: 'Using ArthSathi is very simple. First choose your language. Then login with your mobile number. Fill in your details like age, caste, occupation and income. Then government schemes and insurance for you will be shown. You can take a photo of any document to check for risks.',
+    steps: [
+      { icon: '🌐', h: 'Choose Language', d: 'Select Hindi, Marathi, or English' },
+      { icon: '📱', h: 'Login', d: 'Enter your mobile number and login' },
+      { icon: '📝', h: 'Fill Profile', d: 'Enter age, gender, caste, occupation and income' },
+      { icon: '🌾', h: 'View Schemes', d: 'Government schemes and insurance matched to your profile' },
+      { icon: '🔊', h: 'Listen', d: 'Tap 🔊 on any scheme to hear it read aloud' },
+      { icon: '📄', h: 'Check Documents', d: 'Upload a photo of any document to detect risks' },
+    ],
+  },
+};
+
+function HowToUse({ lang }: { lang: string }) {
+  const [speaking, setSpeaking] = useState(false);
+  const content = HOW_TO[lang] || HOW_TO.hi;
+
+  function speakGuide() {
+    if (!('speechSynthesis' in window)) return;
+    if (speaking) { window.speechSynthesis.cancel(); setSpeaking(false); return; }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(content.voice);
+    const locales: Record<string, string> = { hi: 'hi-IN', mr: 'mr-IN', en: 'en-IN' };
+    utter.lang = locales[lang] || 'hi-IN';
+    utter.rate = 0.85;
+    utter.onend = () => setSpeaking(false);
+    utter.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(utter);
+  }
+
+  return (
+    <section className="py-14 px-5 bg-white">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold text-gray-900">{content.title}</h2>
+          <button
+            onClick={speakGuide}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all ${speaking ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
+          >
+            {speaking ? '⏹ Stop' : '🔊 Listen'}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {content.steps.map((step, i) => (
+            <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+              <div className="text-3xl mb-2">{step.icon}</div>
+              <h3 className="font-bold text-gray-900 text-sm mb-1">{step.h}</h3>
+              <p className="text-gray-500 text-xs leading-relaxed">{step.d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Homepage() {
   const router = useRouter();
   const { navigate, navigating } = useNavigate();
@@ -96,6 +180,9 @@ export default function Homepage() {
           </div>
         </div>
       </section>
+
+      {/* How to Use Guide */}
+      <HowToUse lang={lang} />
 
       {/* Connect */}
       <section className="py-14 px-5 bg-gray-50">

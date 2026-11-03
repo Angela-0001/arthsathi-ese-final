@@ -186,7 +186,7 @@ router.get('/signals', async (req, res, next) => {
 
     // Find similar users (same occupation + caste)
     const similarRes = await query(
-      `SELECT id FROM users WHERE occupation = $1 AND caste_category = $2 AND id != $3 LIMIT 100`,
+      `SELECT id FROM users WHERE occupation::text = $1::text AND caste_category::text = $2::text AND id != $3 LIMIT 100`,
       [occupation, caste_category, uid]
     );
     if (!similarRes.rows.length) return res.json({ success: true, boosts: {}, suppressions: {} });

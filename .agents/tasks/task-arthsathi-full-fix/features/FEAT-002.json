@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Fix scheme descriptions showing in English only, complete missing Marathi translation keys, update Navbar to use t() for nav labels, add roadmap card to dashboard, and delete the dead /connect page. These are all independent UI/translation fixes that do not depend on FEAT-001 backend changes, but FEAT-001's language restriction (hi/mr/en only) should be done first so mr.ts keys added here align with the trimmed LanguageCode type.",
+  "status": "pending",
+  "steps": [
+    "1. Read backend/src/routes/schemes.js fully to see how scheme name/description are returned. Identify if JSONB {en,hi,mr} objects are returned raw or pre-selected.",
+    "2. In backend/src/routes/schemes.js recommendations endpoint: extract Accept-Language header or add ?lang= query param support. In the SQL query or post-processing, select name[lang] and description[lang] (or use Postgres jsonb -> operator: name->>'hi') when returning scheme data to the frontend. Fall back to name->>'en' if the lang key is missing.",
+    "3. In frontend/i18n/mr.ts: add all missing keys. Translate them to Marathi. Missing keys to add: nav.home='होम', nav.eligibility='पात्रता', nav.documents='दस्तऐवज', nav.connect='संपर्क', nav.callUs='फोन करा', nav.login='लॉगिन / साइन अप', nav.profile='प्रोफाइल', nav.mySchemes='माझ्या योजना', nav.logout='लॉगआउट', common.rupees='रुपये', common.per_year='प्रति वर्ष', common.per_month='प्रति माह', common.free='मोफत', common.share='शेअर करा', common.save='जतन करा', common.error='काहीतरी चुकीचे झाले. पुन्हा प्रयत्न करा.', results.no_results='तुमच्या प्रोफाइलसाठी कोणतीही योजना सापडली नाही.', results.score_label='जुळणी गुण', results.benefit='फायदा', results.last_updated='डेटा शेवटचा अपडेट', scheme.apply='अर्ज करा', scheme.details='तपशील', scheme.benefit_amount='फायदा रक्कम', scheme.ministry='मंत्रालय', insurance.premium='वार्षिक प्रीमियम', insurance.coverage='विमा रक्कम', insurance.type='विमा प्रकार', insurance.apply='आता नोंदणी करा', doc.subtitle='कोणत्याही करारावर स्वाक्षरी करण्यापूर्वी समजून घ्या', doc.capture='फोटो घ्या', doc.summary_title='या दस्तऐवजात काय लिहिले आहे', doc.risks_title='सावधान: महत्त्वाच्या गोष्टी', doc.ask_question='या दस्तऐवजाबद्दल प्रश्न विचारा', doc.no_risk='कोणताही मोठा धोका आढळला नाही', doc.high_risk='जास्त धोका — स्वाक्षरी करण्यापूर्वी नीट वाचा', doc.medium_risk='मध्यम धोका — या गोष्टी तपासा', voice.processing='समजत आहे...', voice.tap_to_stop='थांबवण्यासाठी दाबा', error.not_found='पृष्ठ सापडले नाही', error.generic='काहीतरी चुकीचे झाले. पुन्हा प्रयत्न करा.'",
+    "4. In frontend/components/ui/Navbar.tsx: replace hardcoded 'Home', 'Schemes', 'Analyse', 'Connect' with t('nav.home'), t('nav.mySchemes'), t('nav.documents'), t('nav.connect') respectively.",
+    "5. In frontend/app/dashboard/page.tsx: add a roadmap action card to the actionCards array: { icon: '🗺️', title: t('nav.roadmap') || 'Financial Roadmap', desc: 'See your personalized financial action plan', href: '/roadmap', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' }.",
+    "6. Delete frontend/app/connect/page.tsx — the route is dead (Navbar and MobileNav both link to /channels, not /connect).",
+    "7. Run: cd frontend && npm run build — confirm 0 errors."
+  ],
+  "acceptance_criteria": [
+    "Scheme names and descriptions render in Hindi when UI language is Hindi, Marathi when Marathi.",
+    "Switching UI to Marathi — all navbar labels, dashboard cards, auth page, and results page display in Marathi.",
+    "Navbar labels change to Hindi/Marathi when language is switched.",
+    "Dashboard shows 7 action cards including one for 'Financial Roadmap' / 'वित्तीय रोडमैप'.",
+    "Navigating to /connect returns a 404 (file deleted).",
+    "npm run build completes with 0 errors."
+  ],
+  "verification": [
+    "cd c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend && npm run build",
+    "cd c:\\Users\\angel\\Desktop\\ArthSathiFinal\\backend && npm test"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix mojibake emoji in onboarding/page.tsx and reconcile the dual i18n systems (lib/i18n.ts vs i18n/index.ts). These are coupled: after fixing the encoding, the file imports from lib/i18n.ts which uses a different LangCode type and localStorage key than the rest of the app. Fixing both together prevents re-introducing inconsistency.",
+  "status": "pending",
+  "steps": [
+    "1. Read the full content of frontend/app/onboarding/page.tsx (all sections including lines 120+) to inventory ALL mojibake sequences and hardcoded English question strings.",
+    "2. Replace every garbled icon string in the STEPS array with the correct UTF-8 emoji literal: '≡ƒÄñ'→'📱', '≡ƒæñ'→'👤', '≡ƒÆ╝'→'💼', '≡ƒÆ░'→'💰', '≡ƒî╛'→'🌾', 'ΓÜí'→'⚡', '≡ƒ⌐║'→'♿', 'ΓÖ┐'→'⚕️', '≡ƒæº'→'👧', '≡ƒæ¿ΓÇì≡ƒæ⌐ΓÇì≡ƒæº'→'👨‍👩‍👧', '≡ƒÆ╡'→'💵', '≡ƒÄô'→'🎓', '≡ƒôï'→'📊'. Also fix comment separator lines (ΓöÇ sequences) to plain dashes or ASCII.",
+    "3. Check lines 120+ of onboarding/page.tsx for hardcoded English question text (question labels, option labels). Replace any hardcoded English strings with t('onboarding.X_question') or t('gender.Y') etc. using the i18n keys that already exist in hi.ts/mr.ts.",
+    "4. In frontend/lib/i18n.ts: change the localStorage key from 'as_lang' to 'arthsathi_lang' in both setLanguage() and getSavedLanguage(). Change LangCode type to 'hi' | 'mr' | 'en' (remove ta, te, bn). Update the LANGUAGES constant to only include hi, mr, en entries (keep ttsLocale/whisperCode fields for onboarding voice use).",
+    "5. In frontend/i18n/index.ts: change LanguageCode type to 'hi' | 'mr' | 'en'. Remove ta, te, bn from the LANGUAGES object and the translations registry. This also fixes the LanguageSwitcher to show only 3 options.",
+    "6. Run: cd frontend && npm run build — confirm zero TypeScript errors."
+  ],
+  "acceptance_criteria": [
+    "frontend/app/onboarding/page.tsx renders correct emoji icons (📱, 💼, 💰, 🌾, ⚡, etc.) — no ≡ƒ or ΓÇ sequences remain in the file.",
+    "Switching UI language to Hindi before onboarding shows Hindi question text throughout.",
+    "Switching UI language to Marathi before onboarding shows Marathi question text throughout.",
+    "LanguageSwitcher dropdown shows exactly 3 options: हिंदी, मराठी, English.",
+    "localStorage key 'arthsathi_lang' is used consistently — setting language in switcher persists through navigation to onboarding.",
+    "npm run build in frontend/ completes with 0 TypeScript errors."
+  ],
+  "verification": [
+    "cd c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

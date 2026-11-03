@@ -1,0 +1,7 @@
+{
+  "task_id": "task-arthsathi-full-fix",
+  "task_description": "Fix all 15 issues in ArthSathi: mojibake emoji in onboarding, English-only scheme descriptions, broken language switching, bot recommendations ignoring user profile, incomplete Marathi translations, PDF upload failure, dual i18n systems, IVR language trim to 3 langs, and several medium/low UX issues.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

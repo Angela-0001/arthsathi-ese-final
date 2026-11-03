@@ -110,10 +110,18 @@ async function getSchemesByTags(profile, limit) {
       ? `AND NOT ('sc' = ANY(target_groups)) AND NOT ('st' = ANY(target_groups)) AND NOT ('obc' = ANY(target_groups))`
       : '';
 
-    // Age-appropriate filter — don't show "old age home" etc to young users
+    // Age-appropriate filter — don't show elderly schemes to young users, don't show youth schemes to elderly
     const ageAppropriate = age < 50
-      ? `AND NOT (name::text ILIKE '%old age home%' OR name::text ILIKE '%vriddhashram%' OR name::text ILIKE '%senior citizen home%')`
+      ? `AND NOT ('elderly' = ANY(target_groups))
+         AND NOT (name::text ILIKE '%old age home%' OR name::text ILIKE '%vriddhashram%')`
       : '';
+
+    // Profile-appropriate filter inside fetchForGroup
+    const profileFilter = [
+      (!isFemale && !hasGirl) ? `AND NOT ('women' = ANY(target_groups)) AND NOT ('widow' = ANY(target_groups))` : '',
+      (!isDisabled) ? `AND NOT ('disabled' = ANY(target_groups))` : '',
+      (caste === 'general') ? `AND NOT ('sc' = ANY(target_groups)) AND NOT ('st' = ANY(target_groups)) AND NOT ('obc' = ANY(target_groups))` : '',
+    ].filter(Boolean).join('\n          ');
 
     // State filter: prefer state-specific, also include national (empty states)
     const excludeArr = [...usedIds];
@@ -136,6 +144,7 @@ async function getSchemesByTags(profile, limit) {
           AND (eligible_states = '{}' OR $4 = ANY(eligible_states))
           ${casteExcl}
           ${ageAppropriate}
+          ${profileFilter}
           ${excludeClause}
         ORDER BY
           CASE WHEN $4 = ANY(eligible_states) THEN 0 ELSE 1 END,
@@ -154,6 +163,7 @@ async function getSchemesByTags(profile, limit) {
           AND (max_income IS NULL OR max_income >= $2)
           ${casteExcl}
           ${ageAppropriate}
+          ${profileFilter}
           ${excludeClause}
         ORDER BY engagement_weight DESC NULLS LAST
         LIMIT ${maxResults}`;
@@ -181,8 +191,37 @@ async function getSchemesByTags(profile, limit) {
   // ── STEP 2: Fill remaining with general eligible schemes ──────────────────
   const remaining = limit - results.length;
   if (remaining > 0) {
-    const casteExcl = caste === 'general'
-      ? `AND NOT ('sc' = ANY(target_groups)) AND NOT ('st' = ANY(target_groups)) AND NOT ('obc' = ANY(target_groups))`
+
+    // Build exclusion list — exclude groups the user does NOT belong to
+    const groupExclusions = [];
+
+    // Never show women/widow/beti schemes to males
+    if (!isFemale && !hasGirl) {
+      groupExclusions.push(`NOT ('women' = ANY(target_groups))`);
+      groupExclusions.push(`NOT ('widow' = ANY(target_groups))`);
+    }
+    if (!hasGirl) {
+      // Exclude schemes that are ONLY for girl child (beti bachao etc) — but keep general women schemes
+      groupExclusions.push(`NOT (target_groups = ARRAY['women','students'] AND name::text ILIKE '%beti%')`);
+      groupExclusions.push(`NOT (name::text ILIKE '%beti bachao%' OR name::text ILIKE '%sukanya%' OR name::text ILIKE '%kanyadan%')`);
+    }
+    // Never show elderly/pension schemes to young users (under 50)
+    if (!isElderly) {
+      groupExclusions.push(`NOT ('elderly' = ANY(target_groups))`);
+    }
+    // Never show SC/ST/OBC schemes to general caste users
+    if (caste === 'general') {
+      groupExclusions.push(`NOT ('sc' = ANY(target_groups))`);
+      groupExclusions.push(`NOT ('st' = ANY(target_groups))`);
+      groupExclusions.push(`NOT ('obc' = ANY(target_groups))`);
+    }
+    // Never show disabled schemes to non-disabled users
+    if (!isDisabled) {
+      groupExclusions.push(`NOT ('disabled' = ANY(target_groups))`);
+    }
+
+    const exclusionClause = groupExclusions.length > 0
+      ? groupExclusions.map(e => `AND ${e}`).join('\n          ')
       : '';
 
     const excludeArr = [...usedIds];
@@ -202,7 +241,7 @@ async function getSchemesByTags(profile, limit) {
           AND (max_age IS NULL OR max_age >= $1)
           AND (max_income IS NULL OR max_income >= $2)
           AND (eligible_states = '{}' OR $3 = ANY(eligible_states))
-          ${casteExcl}
+          ${exclusionClause}
           ${excludeClause}
         ORDER BY
           CASE WHEN $3 = ANY(eligible_states) THEN 0 ELSE 1 END,
@@ -218,7 +257,7 @@ async function getSchemesByTags(profile, limit) {
           AND (min_age IS NULL OR min_age <= $1)
           AND (max_age IS NULL OR max_age >= $1)
           AND (max_income IS NULL OR max_income >= $2)
-          ${casteExcl}
+          ${exclusionClause}
           ${excludeClause}
         ORDER BY engagement_weight DESC NULLS LAST
         LIMIT ${remaining}`;

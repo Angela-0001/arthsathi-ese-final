@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-004",
+  "type": "fix",
+  "description": "Final integration, low-priority fixes, and cleanup: (1) frontend document page — remove DOCX from accept list since backend doesn't support it, (2) MobileNav language restriction (should match Navbar after FEAT-001), (3) overall build + integration smoke test confirming all FEATs work together. This FEAT is independent of FEAT-002/003 but should run after them to validate integration.",
+  "status": "pending",
+  "steps": [
+    "1. In frontend/app/document/page.tsx: update the file input accept attribute for the upload button from 'image/jpeg,image/png,image/webp,application/pdf,.pdf,.docx,.doc' to 'image/jpeg,image/png,image/webp,application/pdf,.pdf'. Remove the '.docx,.doc' entries since the backend ocrService does not handle DOCX. Update the UI label from 'Upload File / PDF / DOCX' to 'Upload File or PDF'.",
+    "2. Read frontend/components/ui/MobileNav.tsx fully. Verify it imports from '@/i18n' (not lib/i18n.ts). Confirm it has nav links matching Navbar.tsx. After FEAT-001 trims LANGUAGES to 3, MobileNav should automatically only show 3 language options if it uses the LANGUAGES object — verify this is the case. If MobileNav has any hardcoded language list, update it to use Object.keys(LANGUAGES) from '@/i18n'.",
+    "3. Run the full frontend build to confirm all FEATs integrate cleanly: cd frontend && npm run build. Fix any TypeScript errors that only appear when all changes are combined (e.g., a type narrowing issue from the LangCode restriction).",
+    "4. Run backend tests: cd backend && npm test.",
+    "5. Do a manual smoke-check list: (a) Language switcher shows 3 options. (b) Onboarding shows correct emoji. (c) Switching to Hindi — nav labels update. (d) Dashboard has roadmap card. (e) /connect returns 404. (f) IVR voice prompt mentions only 3 languages. Record these results in the findings field."
+  ],
+  "acceptance_criteria": [
+    "Document upload UI shows '.pdf' only (no .docx option).",
+    "MobileNav respects the 3-language restriction from FEAT-001.",
+    "cd frontend && npm run build — zero errors.",
+    "cd backend && npm test — all tests pass.",
+    "No regression in any page that was working before these changes."
+  ],
+  "verification": [
+    "cd c:\\Users\\angel\\Desktop\\ArthSathiFinal\\frontend && npm run build",
+    "cd c:\\Users\\angel\\Desktop\\ArthSathiFinal\\backend && npm test"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
